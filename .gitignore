@@ -1,4 +1,3 @@
-
 # ==========================================
 # Visual Studio
 # ==========================================
@@ -50,3 +49,23 @@ packages/
 *.swo
 Thumbs.db
 Desktop.ini
+=======
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# OS / Editor files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Environment variables & secrets
+.env

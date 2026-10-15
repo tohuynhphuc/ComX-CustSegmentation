@@ -1,0 +1,138 @@
+import os
+import mysql.connector
+import pandas as pd
+
+# ==========================================
+# 1. MYSQL CONFIGURATION
+# ==========================================
+MYSQL_CONFIG = {
+    'host': 'localhost',
+    'port': 3306,
+    'user': 'root',
+    'password': 'root',                 # Update if your MySQL password is different
+    'database': 'CompanyX_DW',
+    'auth_plugin': 'mysql_native_password'
+}
+
+# Base directories
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '..', 'data'))
+SQL_FILE = os.path.join(SCRIPT_DIR, 'dw_init.sql')
+
+# Toggle: If True, sets ClusterID and CustomerSegment to NULL so Python ML can calculate them!
+# If False, keeps the baseline synthetic values already in DimCustomerProfile.csv
+ERASE_ML_COLUMNS = False
+
+
+def execute_ddl():
+    """Connects to MySQL server and creates the CompanyX_DW database and tables."""
+    print(f"⏳ Reading DDL script: {SQL_FILE}...")
+    with open(SQL_FILE, 'r', encoding='utf-8') as f:
+        sql_script = f.read()
+
+    # Connect to MySQL (without database initially, as script creates it)
+    conn_params = MYSQL_CONFIG.copy()
+    if 'database' in conn_params:
+        del conn_params['database']
+
+    conn = mysql.connector.connect(**conn_params)
+    cursor = conn.cursor()
+
+    print("🚀 Initializing CompanyX_DW Database and Tables...")
+    statements = [stmt.strip() for stmt in sql_script.split(';') if stmt.strip()]
+    for stmt in statements:
+        cursor.execute(stmt)
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+    print("✅ Database and tables created successfully!")
+
+
+def import_csv_data():
+    """Imports all 6 CSV files into their respective MySQL tables in dependency order."""
+    conn = mysql.connector.connect(**MYSQL_CONFIG)
+    cursor = conn.cursor()
+
+    # 1. DimProduct
+    print("⏳ Importing DimProduct.csv...")
+    df_prod = pd.read_csv(os.path.join(DATA_DIR, 'DimProduct.csv'))
+    prod_query = """
+    INSERT INTO DimProduct (ProductKey, ProductName, Category)
+    VALUES (%s, %s, %s)
+    """
+    cursor.executemany(prod_query, df_prod.values.tolist())
+    conn.commit()
+    print(f"   Loaded {len(df_prod)} rows into DimProduct.")
+
+    # 2. DimDate
+    print("⏳ Importing DimDate.csv...")
+    df_date = pd.read_csv(os.path.join(DATA_DIR, 'DimDate.csv'))
+    date_query = """
+    INSERT INTO DimDate (DateKey, DayName, MonthName, Year, Quarter)
+    VALUES (%s, %s, %s, %s, %s)
+    """
+    cursor.executemany(date_query, df_date.values.tolist())
+    conn.commit()
+    print(f"   Loaded {len(df_date)} rows into DimDate.")
+
+    # 3. SubDimCustomer
+    print("⏳ Importing SubDimCustomer.csv...")
+    df_sub = pd.read_csv(os.path.join(DATA_DIR, 'SubDimCustomer.csv'))
+    sub_query = """
+    INSERT INTO SubDimCustomer (CustomerKey, Gender, MaritalStatus, TotalChildren, HomeOwnerFlag, NumberCarsOwned)
+    VALUES (%s, %s, %s, %s, %s, %s)
+    """
+    cursor.executemany(sub_query, df_sub.values.tolist())
+    conn.commit()
+    print(f"   Loaded {len(df_sub)} rows into SubDimCustomer.")
+
+    # 4. DimCustomer
+    print("⏳ Importing DimCustomer.csv...")
+    df_cust = pd.read_csv(os.path.join(DATA_DIR, 'DimCustomer.csv'))
+    cust_query = """
+    INSERT INTO DimCustomer (SurrogateKey, CustomerKey, BirthDate, Education, Occupation, 
+                            YearlyIncome, CountryName, RegionGroup, isActivate, StartDate, EndDate)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    """
+    cursor.executemany(cust_query, df_cust.values.tolist())
+    conn.commit()
+    print(f"   Loaded {len(df_cust)} rows into DimCustomer.")
+
+    # 5. DimCustomerProfile
+    print("⏳ Importing DimCustomerProfile.csv...")
+    df_prof = pd.read_csv(os.path.join(DATA_DIR, 'DimCustomerProfile.csv'))
+    if ERASE_ML_COLUMNS:
+        print("   Notice: Setting ClusterID and CustomerSegment to NULL (to be populated by ML script).")
+        df_prof['ClusterID'] = None
+        df_prof['CustomerSegment'] = None
+
+    prof_query = """
+    INSERT INTO DimCustomerProfile (ProfileKey, ClusterID, CustomerSegment, Recency, Frequency, Monetary)
+    VALUES (%s, %s, %s, %s, %s, %s)
+    """
+    # Replace pandas NaN with None so MySQL treats them as SQL NULL
+    prof_records = df_prof.where(pd.notnull(df_prof), None).values.tolist()
+    cursor.executemany(prof_query, prof_records)
+    conn.commit()
+    print(f"   Loaded {len(df_prof)} rows into DimCustomerProfile.")
+
+    # 6. FactSales
+    print("⏳ Importing FactSales.csv...")
+    df_fact = pd.read_csv(os.path.join(DATA_DIR, 'FactSales.csv'))
+    fact_query = """
+    INSERT INTO FactSales (SalesID, ProductKey, CustomerKey, OrderDateKey, ProfileKey, OrderQty, TotalSpent)
+    VALUES (%s, %s, %s, %s, %s, %s, %s)
+    """
+    cursor.executemany(fact_query, df_fact.values.tolist())
+    conn.commit()
+    print(f"   Loaded {len(df_fact)} rows into FactSales.")
+
+    cursor.close()
+    conn.close()
+    print("🎉 All 6 tables imported into CompanyX_DW successfully!")
+
+
+if __name__ == '__main__':
+    execute_ddl()
+    import_csv_data()
