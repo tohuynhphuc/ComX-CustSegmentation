@@ -1,0 +1,52 @@
+
+# ==========================================
+# Visual Studio
+# ==========================================
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.rsuser
+
+# ==========================================
+# Build outputs
+# ==========================================
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+
+# ==========================================
+# SSIS (SQL Server Integration Services)
+# ==========================================
+*.dtproj.user
+*.dtsx.user
+*.ispac
+*.dtproj.bak
+*.dtsx.bak
+
+# SSIS temporary files
+*.tmp
+*.temp
+*.log
+
+# ==========================================
+# NuGet
+# ==========================================
+packages/
+*.nupkg
+
+# ==========================================
+# Temporary / backup files
+# ==========================================
+*.bak
+*.cache
+*.pdb
+*~
+*.swp
+*.swo
+Thumbs.db
+Desktop.ini
