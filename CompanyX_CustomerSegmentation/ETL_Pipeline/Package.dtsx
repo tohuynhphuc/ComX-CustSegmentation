@@ -11,8 +11,8 @@
   DTS:LocaleID="8192"
   DTS:ObjectName="Package"
   DTS:PackageType="5"
-  DTS:VersionBuild="134"
-  DTS:VersionGUID="{C07D1888-FEDA-4720-88A4-BAEB1D8AA01B}">
+  DTS:VersionBuild="136"
+  DTS:VersionGUID="{6CC46B04-5E5C-42C7-B5BC-8A2EF6823707}">
   <DTS:Property
     DTS:Name="PackageFormatVersion">8</DTS:Property>
   <DTS:ConnectionManagers>
@@ -4946,6 +4946,7 @@ ORDER BY c.CustomerID ASC;</property>
       DTS:refId="Package\Load FactSales"
       DTS:CreationName="Microsoft.Pipeline"
       DTS:Description="Data Flow Task"
+      DTS:Disabled="True"
       DTS:DTSID="{958BB563-0951-432A-96A2-6D16CD94C1EC}"
       DTS:ExecutableType="Microsoft.Pipeline"
       DTS:LocaleID="-1"
@@ -9002,7 +9003,7 @@ ORDER BY c.CustomerID ASC;</property>
         <NodeLayout
           Size="168,42.8"
           Id="Package\Update Watermark"
-          TopLeft="252.740388914733,116.966647869004" />
+          TopLeft="23.8942300846259,142.572709018499" />
         <NodeLayout
           Size="165.2,42.8"
           Id="Package\IL implementation"
@@ -9114,7 +9115,7 @@ ORDER BY c.CustomerID ASC;</property>
         <NodeLayout
           Size="148.8,41.6"
           Id="Package\Load FactSales"
-          TopLeft="152.403849472992,210.348488506214" />
+          TopLeft="698.076938280076,215.765155287838" />
       </GraphLayout>
     </LayoutInfo>
   </Package>
