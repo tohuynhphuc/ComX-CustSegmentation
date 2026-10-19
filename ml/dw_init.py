@@ -1,9 +1,16 @@
 import os
+import sys
 import mysql.connector
 import pandas as pd
+import pyodbc
+
+# Ensure UTF-8 output on Windows consoles
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+
 
 # ==========================================
-# 1. MYSQL CONFIGURATION
+# 1. DATABASE CONFIGURATIONS
 # ==========================================
 MYSQL_CONFIG = {
     'host': 'localhost',
@@ -13,6 +20,19 @@ MYSQL_CONFIG = {
     'database': 'CompanyX_DW',
     'auth_plugin': 'mysql_native_password'
 }
+
+def get_sqlserver_connection():
+    """Detects available ODBC driver and connects to CompanyX on SQL Server."""
+    drivers = pyodbc.drivers()
+    preferred = [
+        'ODBC Driver 18 for SQL Server',
+        'ODBC Driver 17 for SQL Server',
+        'SQL Server'
+    ]
+    driver = next((d for d in preferred if d in drivers), drivers[0] if drivers else 'SQL Server')
+    extra = ";TrustServerCertificate=yes" if '18' in driver else ""
+    conn_str = f"DRIVER={{{driver}}};SERVER=localhost;DATABASE=CompanyX;Trusted_Connection=yes{extra};"
+    return pyodbc.connect(conn_str)
 
 # Base directories
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -130,9 +150,78 @@ def import_csv_data():
 
     cursor.close()
     conn.close()
-    print("🎉 All 6 tables imported into CompanyX_DW successfully!")
+    print("🎉 All 6 dimension & fact CSV tables imported into CompanyX_DW successfully!")
+
+
+def populate_fact_customer_snapshot(through_date='2014-12-31', batch_size=10000):
+    """
+    Extracts monthly RFM snapshots from CompanyX (SQL Server) 
+    and batch inserts them into FactCustomerSnapshot (MySQL DW).
+    """
+    print(f"⏳ Extracting monthly customer snapshots from SQL Server up to {through_date}...")
+    sql_query = f"""
+    SET NOCOUNT ON;
+    WITH MonthEnds AS (
+        SELECT CAST('2011-05-31' AS DATE) AS SnapshotDate
+        UNION ALL
+        SELECT EOMONTH(DATEADD(month, 1, SnapshotDate))
+        FROM MonthEnds
+        WHERE SnapshotDate < '{through_date}'
+    ),
+    Snapshots AS (
+        SELECT 
+            CAST(soh.CustomerID AS VARCHAR(50)) AS CustomerKey,
+            CAST(FORMAT(m.SnapshotDate, 'yyyyMMdd') AS INT) AS DateKey,
+            DATEDIFF(day, MAX(soh.OrderDate), m.SnapshotDate) AS Recency,
+            COUNT(DISTINCT soh.SalesOrderID) AS Frequency,
+            CAST(SUM(soh.TotalDue) AS DECIMAL(18, 2)) AS Monetary
+        FROM MonthEnds m
+        JOIN Sales.SalesOrderHeader soh 
+            ON soh.OrderDate <= m.SnapshotDate 
+           AND soh.OnlineOrderFlag = 1
+        GROUP BY m.SnapshotDate, soh.CustomerID
+    )
+    SELECT 
+        CustomerKey, DateKey, NULL AS ModelConfigKey, NULL AS ClusterProfileKey,
+        Recency, Frequency, Monetary, NULL AS ClusterSegment
+    FROM Snapshots
+    ORDER BY DateKey, CustomerKey
+    OPTION (MAXRECURSION 100);
+    """
+    
+    ss_conn = get_sqlserver_connection()
+    ss_cursor = ss_conn.cursor()
+    ss_cursor.execute(sql_query)
+    
+    insert_sql = """
+    INSERT INTO FactCustomerSnapshot 
+        (CustomerKey, DateKey, ModelConfigKey, ClusterProfileKey, Recency, Frequency, Monetary, ClusterSegment)
+    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+    """
+    
+    my_conn = mysql.connector.connect(**MYSQL_CONFIG)
+    my_cursor = my_conn.cursor()
+    
+    total_inserted = 0
+    while True:
+        rows = ss_cursor.fetchmany(batch_size)
+        if not rows:
+            break
+        records = [tuple(r) for r in rows]
+        my_cursor.executemany(insert_sql, records)
+        my_conn.commit()
+        total_inserted += len(records)
+        print(f"   Inserted {total_inserted:,} rows into FactCustomerSnapshot...")
+        
+    ss_cursor.close()
+    ss_conn.close()
+    my_cursor.close()
+    my_conn.close()
+    print(f"✅ Successfully loaded {total_inserted:,} rows into FactCustomerSnapshot!")
 
 
 if __name__ == '__main__':
     execute_ddl()
     import_csv_data()
+    populate_fact_customer_snapshot()
+

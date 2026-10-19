@@ -86,3 +86,46 @@ CREATE TABLE FactSales (
     CONSTRAINT fk_fact_profile
         FOREIGN KEY (ProfileKey) REFERENCES DimCustomerProfile(ProfileKey)
 );
+
+-- 7. DimModelConfig (SCD Type 2 for ML Model Configurations)
+CREATE TABLE DimModelConfig (
+    ModelConfigKey INT AUTO_INCREMENT PRIMARY KEY,
+    ModelVersion INT NOT NULL,
+    ClusterID INT NOT NULL,
+    ClusterSegment VARCHAR(50) NOT NULL,
+    Mean_Scaled_R DOUBLE NOT NULL,
+    Std_Scaled_R DOUBLE NOT NULL,
+    Mean_Scaled_F DOUBLE NOT NULL,
+    Std_Scaled_F DOUBLE NOT NULL,
+    Mean_Scaled_M DOUBLE NOT NULL,
+    Std_Scaled_M DOUBLE NOT NULL,
+    Centroid_Scaled_R DOUBLE NOT NULL,
+    Centroid_Scaled_F DOUBLE NOT NULL,
+    Centroid_Scaled_M DOUBLE NOT NULL,
+    IsActive TINYINT(1) NOT NULL DEFAULT 1,
+    StartDate DATE NOT NULL,
+    EndDate DATE NULL,
+    INDEX idx_model_version (ModelVersion),
+    INDEX idx_is_active (IsActive)
+);
+
+-- 8. FactCustomerSnapshot (Periodic Monthly Customer RFM Snapshot)
+CREATE TABLE FactCustomerSnapshot (
+    SurrogateKey BIGINT AUTO_INCREMENT PRIMARY KEY,
+    CustomerKey VARCHAR(50) NOT NULL,
+    DateKey INT NOT NULL,
+    ModelConfigKey INT NULL,
+    ClusterProfileKey INT NULL,
+    Recency INT NOT NULL,
+    Frequency INT NOT NULL,
+    Monetary DECIMAL(18, 2) NOT NULL,
+    ClusterSegment VARCHAR(50) NULL,
+    UNIQUE KEY uk_customer_date (CustomerKey, DateKey),
+    INDEX idx_datekey (DateKey),
+    INDEX idx_customerkey (CustomerKey),
+    INDEX idx_modelconfig (ModelConfigKey),
+    CONSTRAINT fk_snapshot_modelconfig
+        FOREIGN KEY (ModelConfigKey) REFERENCES DimModelConfig(ModelConfigKey)
+        ON DELETE SET NULL ON UPDATE CASCADE
+);
+
