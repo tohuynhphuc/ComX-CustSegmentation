@@ -1,19 +1,17 @@
 /*
- CompanyX Data Warehouse -- NON-DESTRUCTIVE, RERUNNABLE INITIAL SCHEMA
- Prepared against the uploaded Package(1).dtsx and supplied DDL.
- SQL Server (T-SQL); execute in SSMS with a login able to CREATE TABLE/SCHEMA.
- Assumes [CompanyX_DataWarehouse] database already exists.
+ CompanyX Data Warehouse -- REFINED INITIAL SCHEMA (SQL Server)
+ Fresh-install definition aligned with the final project architecture:
+   DimCustomerProfiling, DimClusterProfiling, DimDate, DimModelConfig,
+   FactCustomerRFMLive, FactCustomerSnapshot, stg.CustomerProfile.
 
- IMPORTANT:
-  - Does not DROP/TRUNCATE existing tables or overwrite existing data.
-  - IF NOT EXISTS does not upgrade an already-existing table's columns/types.
-  - FactSales, RFM, snapshot and staging definitions are PROPOSED: validate grain,
-    time windows, currencies and source-to-warehouse mappings with your team.
-  - dbo.ETL_Watermark names match the supplied SSIS package (PipelineName,
-    LastWatermark), NOT the alternate DDL using TableName/LastProcessedDate.
-  - The new SCD set-based MERGE pipeline is NOT created by this DDL alone.
-  - ClusterSegment uses NVARCHAR(50) (Unicode), an intentional improvement
-    over the user-provided VARCHAR(50).
+ FactSales, DimProduct, and legacy SubDimCustomer are intentionally NOT created.
+ Original transactions remain in the CompanyX source database.
+
+ Safe to rerun for missing objects, but this file does NOT migrate existing table
+ definitions. Use the schema-alignment RFM script for an existing installation.
+ ModelConfigKey is nullable in snapshots until yearly models are published.
+ ETL_Watermark remains OPTIONAL for legacy SSIS compatibility; the current
+ comparison-based customer extract does not use a customer watermark.
 */
 USE [CompanyX_DataWarehouse];
 
@@ -102,25 +100,7 @@ IF NOT EXISTS (SELECT 1
 
 
 GO
-/* 3. Product dimension used by Product Data Flow.
-   Nullable category fields allow products with no subcategory. */
-IF OBJECT_ID(N'dbo.DimProduct', N'U') IS NULL
-    BEGIN
-        CREATE TABLE dbo.DimProduct (
-            ProductID INT NOT NULL,
-            ProductName NVARCHAR (50) NOT NULL,
-            ProductSubcategoryID INT NULL,
-            ModifiedDate DATETIME NOT NULL,
-            ProductCategoryID INT NULL,
-            SubcategoryName NVARCHAR (50) NULL,
-            CategoryName NVARCHAR (50) NULL,
-            CONSTRAINT PK_DimProduct PRIMARY KEY CLUSTERED (ProductID)
-        );
-    END
-
-
-GO
-/* 4. SSIS watermark: EXACT column names referenced in current package. */
+/* 3. Optional legacy ETL watermark (unused by the active customer comparison ETL). */
 IF OBJECT_ID(N'dbo.ETL_Watermark', N'U') IS NULL
     BEGIN
         CREATE TABLE dbo.ETL_Watermark (
@@ -143,7 +123,7 @@ IF NOT EXISTS (SELECT 1
 
 
 GO
-/* 5. Calendar dimension: keep existing rows, create only when absent. */
+/* 4. Calendar dimension: keep existing rows, create only when absent. */
 IF OBJECT_ID(N'dbo.DimDate', N'U') IS NULL
     BEGIN
         CREATE TABLE dbo.DimDate (
@@ -195,7 +175,7 @@ WHERE  NOT EXISTS (SELECT 1
 
 
 GO
-/* 6. Annual clustering config; ONE ROW PER (ModelVersion, ClusterID).
+/* 5. Annual clustering config; ONE ROW PER (ModelVersion, ClusterID).
    Preserve the user's chosen names/precision. Do not drop trained models. */
 IF OBJECT_ID(N'dbo.DimModelConfig', N'U') IS NULL
     BEGIN
@@ -238,7 +218,7 @@ IF NOT EXISTS (SELECT 1
 
 
 GO
-/* 7. One-row-per-customer current rolling RFM metrics.
+/* 6. One-row-per-customer current rolling RFM metrics.
    Frequency is distinct orders in the 365-day window, not order lines.
    Monetary is summed sales line amount in the same 365-day window. */
 IF OBJECT_ID(N'dbo.FactCustomerRFMLive', N'U') IS NULL
@@ -247,12 +227,18 @@ IF OBJECT_ID(N'dbo.FactCustomerRFMLive', N'U') IS NULL
             CustomerKey_Str NVARCHAR (20) NOT NULL,
             AsOfDate DATE NOT NULL,
             LastPurchaseDate DATE NULL,
+            LastPurchaseTimestamp DATETIME2(3) NULL,
             RecencyDays INT NULL,
             Frequency365d INT NOT NULL,
             Monetary365d DECIMAL (19, 4) NOT NULL,
+            ClusterProfilingSK INT NULL,
+            ModelConfigKey INT NULL,
+            ClusterSegment NVARCHAR(50) NULL,
             UpdatedAtUtc DATETIME2 (3) CONSTRAINT DF_FactCustomerRFMLive_UpdatedAtUtc DEFAULT (SYSUTCDATETIME()) NOT NULL,
             CONSTRAINT PK_FactCustomerRFMLive PRIMARY KEY CLUSTERED (CustomerKey_Str),
             CONSTRAINT FK_FactCustomerRFMLive_Customer FOREIGN KEY (CustomerKey_Str) REFERENCES dbo.DimCustomerProfiling (CustomerKey_Str),
+            CONSTRAINT FK_FactCustomerRFMLive_ClusterProfile FOREIGN KEY (ClusterProfilingSK) REFERENCES dbo.DimClusterProfiling (ClusterProfilingSK),
+            CONSTRAINT FK_FactCustomerRFMLive_ModelConfig FOREIGN KEY (ModelConfigKey) REFERENCES dbo.DimModelConfig (ModelConfigKey),
             CONSTRAINT CK_FactCustomerRFMLive_R CHECK (RecencyDays IS NULL
                                                        OR RecencyDays >= 0),
             CONSTRAINT CK_FactCustomerRFMLive_F CHECK (Frequency365d >= 0)
@@ -261,7 +247,7 @@ IF OBJECT_ID(N'dbo.FactCustomerRFMLive', N'U') IS NULL
 
 
 GO
-/* 8. Monthly frozen historical RFM + clustering. A DimModelConfig key
+/* 7. Monthly frozen historical RFM + clustering. A DimModelConfig key
    denotes a PARTICULAR cluster from a PARTICULAR annual model version. */
 IF OBJECT_ID(N'dbo.FactCustomerSnapshot', N'U') IS NULL
     BEGIN
@@ -270,7 +256,9 @@ IF OBJECT_ID(N'dbo.FactCustomerSnapshot', N'U') IS NULL
             CustomerKey_Str NVARCHAR (20) NOT NULL,
             SnapshotMonth DATE NOT NULL, -- FIRST date of the reporting month
             SnapshotDateKey INT NOT NULL, -- YYYYMMDD of LAST day of the month
-            ModelConfigKey INT NOT NULL, -- assigned cluster row in DimModelConfig
+            ModelConfigKey INT NULL, -- NULL until an annual model has scored this snapshot
+            ClusterProfilingSK INT NULL, -- NULL when historical SCD2 version cannot be established
+            ClusterSegment NVARCHAR(50) NULL,
             LastPurchaseDate DATE NULL,
             RecencyDays INT NULL,
             Frequency365d INT NOT NULL,
@@ -283,6 +271,7 @@ IF OBJECT_ID(N'dbo.FactCustomerSnapshot', N'U') IS NULL
             CONSTRAINT UQ_FactCustomerSnapshot_CustomerMonth UNIQUE (CustomerKey_Str, SnapshotMonth),
             CONSTRAINT FK_FactCustomerSnapshot_Customer FOREIGN KEY (CustomerKey_Str) REFERENCES dbo.DimCustomerProfiling (CustomerKey_Str),
             CONSTRAINT FK_FactCustomerSnapshot_Model FOREIGN KEY (ModelConfigKey) REFERENCES dbo.DimModelConfig (ModelConfigKey),
+            CONSTRAINT FK_FactCustomerSnapshot_ClusterProfile FOREIGN KEY (ClusterProfilingSK) REFERENCES dbo.DimClusterProfiling (ClusterProfilingSK),
             CONSTRAINT FK_FactCustomerSnapshot_Date FOREIGN KEY (SnapshotDateKey) REFERENCES dbo.DimDate (DateKey),
             CONSTRAINT CK_FactCustomerSnapshot_Month CHECK (DAY(SnapshotMonth) = 1),
             CONSTRAINT CK_FactCustomerSnapshot_DateKey CHECK (SnapshotDateKey = CONVERT (INT, CONVERT (CHAR (8), EOMONTH(SnapshotMonth), 112))),
@@ -305,44 +294,7 @@ IF NOT EXISTS (SELECT 1
 
 
 GO
-/* 9. Proposed FactSales at ORDER-LINE grain for RFM calculations.
-   Requires a new/other SSIS process; NOT loaded by the uploaded package.
-   Excludes order-level tax/freight; amount defined as line revenue. */
-IF OBJECT_ID(N'dbo.FactSales', N'U') IS NULL
-    BEGIN
-        CREATE TABLE dbo.FactSales (
-            SalesOrderID INT NOT NULL,
-            SalesOrderDetailID INT NOT NULL,
-            CustomerKey_Str NVARCHAR (20) NOT NULL,
-            ProductID INT NOT NULL,
-            OrderDateKey INT NOT NULL, -- YYYYMMDD
-            OrderQty SMALLINT NOT NULL,
-            UnitPrice DECIMAL (19, 4) NOT NULL,
-            SalesAmount DECIMAL (19, 4) NOT NULL, -- source SalesOrderDetail.LineTotal
-            ModifiedDate DATETIME NULL,
-            CONSTRAINT PK_FactSales PRIMARY KEY CLUSTERED (SalesOrderID, SalesOrderDetailID),
-            CONSTRAINT FK_FactSales_Customer FOREIGN KEY (CustomerKey_Str) REFERENCES dbo.DimCustomerProfiling (CustomerKey_Str),
-            CONSTRAINT FK_FactSales_Product FOREIGN KEY (ProductID) REFERENCES dbo.DimProduct (ProductID),
-            CONSTRAINT FK_FactSales_Date FOREIGN KEY (OrderDateKey) REFERENCES dbo.DimDate (DateKey),
-            CONSTRAINT CK_FactSales_Quantity CHECK (OrderQty > 0)
-        );
-    END
-
-
-GO
-IF NOT EXISTS (SELECT 1
-               FROM   sys.indexes
-               WHERE  object_id = OBJECT_ID(N'dbo.FactSales')
-                      AND name = N'IX_FactSales_CustomerDate')
-    BEGIN
-        CREATE NONCLUSTERED INDEX IX_FactSales_CustomerDate
-            ON dbo.FactSales(CustomerKey_Str, OrderDateKey)
-            INCLUDE(SalesOrderID, SalesAmount);
-    END
-
-
-GO
-/* 10. Staging table for your future set-based T-SQL MERGE / Type 2 code.
+/* 8. Staging table for your future set-based T-SQL MERGE / Type 2 code.
    BatchID allows controlled comparisons and safe per-batch cleanup. */
 IF SCHEMA_ID(N'stg') IS NULL
     EXECUTE (N'CREATE SCHEMA stg');
@@ -372,24 +324,7 @@ IF OBJECT_ID(N'stg.CustomerProfile', N'U') IS NULL
 
 
 GO
-/* 11. LEGACY / OPTIONAL: only needed if you intend to run the old
-   SubDimCustomer SSIS data flow. Included so that old task has a destination. */
-IF OBJECT_ID(N'dbo.SubDimCustomer', N'U') IS NULL
-    BEGIN
-        CREATE TABLE dbo.SubDimCustomer (
-            SCustKey NVARCHAR (22) NOT NULL,
-            MaritalStatus NVARCHAR (1) NULL,
-            Gender NVARCHAR (1) NULL,
-            TotalChildren INT NULL,
-            HomeOwnerFlag BIT NULL,
-            NumberCarsOwned INT NULL,
-            CONSTRAINT PK_SubDimCustomer PRIMARY KEY CLUSTERED (SCustKey)
-        );
-    END
-
-
-GO
-/* Inspect what exists. Does not prove compatibility for every old table. */
+/* Inspect the refined tables present after setup. */
 SELECT   s.name AS SchemaName,
          t.name AS TableName,
          SUM(CASE WHEN c.column_id IS NULL THEN 0 ELSE 1 END) AS ColumnCount
@@ -401,7 +336,7 @@ FROM     sys.tables AS t
          sys.columns AS c
          ON c.object_id = t.object_id
 WHERE    (s.name = N'dbo'
-          AND t.name IN (N'DimCustomerProfiling', N'DimClusterProfiling', N'DimProduct', N'ETL_Watermark', N'DimDate', N'DimModelConfig', N'FactCustomerRFMLive', N'FactCustomerSnapshot', N'FactSales', N'SubDimCustomer'))
+          AND t.name IN (N'DimCustomerProfiling', N'DimClusterProfiling', N'ETL_Watermark', N'DimDate', N'DimModelConfig', N'FactCustomerRFMLive', N'FactCustomerSnapshot'))
          OR (s.name = N'stg'
              AND t.name = N'CustomerProfile')
 GROUP BY s.name, t.name

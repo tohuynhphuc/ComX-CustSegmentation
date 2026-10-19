@@ -2,7 +2,7 @@
  CompanyX Data Warehouse -- Refined Diagram: RFM milestone
  SQL Server 2016 SP1+ recommended (CREATE OR ALTER).
 
- NON-DESTRUCTIVE: Does not DROP tables, truncate data, or remove FactSales/DimProduct.
+ NON-DESTRUCTIVE: Does not drop warehouse tables or truncate data. No FactSales/DimProduct dependency.
  Assumes CompanyX and CompanyX_DataWarehouse are on the SAME SQL Server instance.
  Assumes these tables ALREADY exist:
    dbo.DimCustomerProfiling, dbo.DimClusterProfiling, dbo.DimModelConfig,
@@ -133,6 +133,14 @@ BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
 
+        -- Live RFM must not silently move backward to an older evaluation date.
+        IF EXISTS (
+            SELECT 1 FROM dbo.FactCustomerRFMLive
+            WHERE AsOfDate > @AsOfDate
+        )
+            THROW 51120,
+                'A newer live RFM date already exists. Use the historical RFM function for backfills.', 1;
+
         MERGE dbo.FactCustomerRFMLive WITH (HOLDLOCK) AS target
         USING
         (
@@ -163,6 +171,9 @@ BEGIN
             target.Frequency365d = source.Frequency365d,
             target.Monetary365d = source.Monetary365d,
             target.ClusterProfilingSK = source.ClusterProfilingSK,
+            -- Prediction becomes stale when its RFM input or profile changes.
+            target.ModelConfigKey = NULL,
+            target.ClusterSegment = NULL,
             target.UpdatedAtUtc = SYSUTCDATETIME()
         WHEN NOT MATCHED BY TARGET THEN
             INSERT (CustomerKey_Str, AsOfDate, LastPurchaseDate,
@@ -197,9 +208,10 @@ GO
  DECLARE @Today DATE = CONVERT(DATE, GETDATE());
  EXEC dbo.usp_RefreshCustomerRFMLive @AsOfDate = @Today;
 
- NOT YET IMPLEMENTED: annual Python model publication/scoring and monthly
- snapshot insertion. FactCustomerSnapshot.ModelConfigKey is NOT NULL in
- the earlier DDL, so snapshots must wait for a model to be published.
+ Monthly RFM snapshot insertion is implemented separately in
+ dbo.usp_AppendMonthlyRFMSnapshot. Annual Python model
+ publication/prediction remains pending. Snapshot.ModelConfigKey is nullable
+ until predictions are published.
 
  No DROP TABLE is included. After checking the SQL Server dependency graph,
  and AFTER replacing the old SSIS Sales/Product flows, you may separately
