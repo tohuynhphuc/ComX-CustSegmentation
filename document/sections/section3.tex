@@ -1,19 +1,45 @@
 \chapter{Datawarehose Design}
+
 We propose our data warehouse design as below:
 
 \begin{figure}[htbp]
     \centering % Căn giữa hình ảnh
     \includegraphics[width=0.8\textwidth]{DWHdesign.png}
-    \caption{Đây là chú thích của hình ảnh.}
+    \caption{Data Warehouse Design.}
     \label{fig:DWH_design} % Nhãn để dùng cho lệnh tham chiếu \ref{}
 \end{figure}
 
-At a first glance, we can observe that the blueprint follows a hybrid constellation / star-galaxy schema which consists of two fact tables, namely FactCustomerSnapshot, FactCustomerRFMLive; four dimensions including \verb|DimModelConfig|, \verb|DimClusterProfiling|, \verb|DimDate|, \verb|DimCustomerProfiling|. 
-\section{Context}
+At a first glance, we can observe that the blueprint follows a Galaxy Schema (Fact Constellation) which consists of two fact tables, namely \textbf{FactCustomerSnapshot}, \textbf{FactCustomerRFMLive}; four dimensions including DimModelConfig, DimClusterProfiling, DimDate, DimCustomerProfiling; and an additional \verb|CustomerProfile| staging table for incremental loading process (using T-SQL Merge). We discuss in details about these elements later in this chapter.
 
-Write the project background, business context, and objectives here.
+\section{Staging Layer}
 
-\subsection{Main issue}
+The table\'s primary key is the combination of \textbf{BatchID} and \textbf{CustomerKey\_Str}. Conceptually, this relational table acts as a Message Queue, which stores and prepares the demographics data of customers before updating or inserting necessary entries into DimClusterProfiling and DimCustomerProfiling. Moreover, with the help of batching, this table enhances the fault tolerance property of our system. For example, we can monitor the status of a specific batch with ease and rerun it in case that our ETL process encounters problems like crashes and power outage.
 
-Describe the key problem statements, current bottlenecks, and target solutions here.
+\section{Dimension Layer \& Slowly Changing Dimension Strategy}
 
+\subsection{DimCustomerProfiling}
+
+We designed this dimension so that it stores customers\' personal information that rarely change or their historical records are not worth being put into storage. These are: birth date, gender, marital status, total number of Children, Home Owner status, and total number of cars owned by that customer. And since one distinct customer corresponds to one row, we converted CustomerId from CompanyX.Sales.Customer to string and reuses it as the Primary key of this dimension.
+
+\subsection{DimClusterProfiling}
+
+Regarding this table, socioeconomic and geographical details are stored in order to complement with DimCustomerProfiling to provide analysts with a comprehensive view of customers. These details include YearlyIncome, Education, Occupation, CountryName, RegionGroup. What's more, DimClusterProfiling is designed with SCD type 2, allowing analysts to correlate whether a customer's migration to a higher-value RFM segment was preceded by change in these attributes.  
+
+\subsection{DimModelConfig}
+
+This is created in order to track the metrics derived from our training models. These numbers will be then used to calculate the customer segment on-the-fly once one customer makes a transaction and monthly when we append our \textbf{FactCustomerSnapshot} with new rows. This will be discussed further in the next chapter. Besides that, we decided to implemenet SCD type 2 tracking for this dimension to perserve historical truth and guarantee auditability of past decisions.
+
+\subsection{DimDate}
+
+Each row in this table corresponds to a specific date. We planned to make this dimension static, so the date range starts from the start of the CompanyX database and ends with our current date in 2026 plus 20 years more. This ensures that if the database continues to operate, DimDate does not need to be modified in the next 20 years.
+
+\section{Fact Layer}
+
+\subsection{FactCustomerSnapshot}
+
+This is a periodic snapshot fact table, which means that it will be appended with new rows in a defined schedule. In our design, FactCustomerSnapshot will be updated monthly (at the end of each month). The number of appended rows are equal to that of FactCustomerRFMLive at that specific point of time. Regarding the RFM scores(RecencyDays, Frequency365d, Monetary365d), as their names suggest, those metrics are calculated within the 365-day window. 
+Using this window is necessary to avoid sensonality bias and match the real world inter-purchase interval.
+
+\subsection{FactCustomerRFMLive}
+
+This fact table will update everytime a customer makes a transaction. However, it is different from a traditional transaction table in the sense that instead of only inserting, this table will act differently depending the customer. If he/she is the first time purchasing items, it will append the record. Otherwise, his/her old row will get overwritten by RFM values and customer segmetn derived from the new transaction. By having two fact tables as presented, we achieve separation of concerns by storing the historical records in one table and keeping up with the new real-time updates in another. This is critical when we need to compare customer segmentation over years or months and at the same time manage to take actions based on the up-to-date transactional/reporting performance.
