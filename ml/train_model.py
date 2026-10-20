@@ -4,7 +4,7 @@ from datetime import date
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 
-from helpers import (
+from ml.model_core import (
     RFM_COLS,
     extract_snapshot,
     clean_rfm,

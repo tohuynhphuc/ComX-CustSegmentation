@@ -16,7 +16,7 @@ from sklearn.metrics import (
     silhouette_score,
 )
 
-from helpers import (
+from ml.model_core import (
     assign_clusters,
     build_scaler,
     clean_rfm,
