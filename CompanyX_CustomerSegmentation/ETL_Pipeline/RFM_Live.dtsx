@@ -11,8 +11,8 @@
   DTS:LocaleID="8192"
   DTS:ObjectName="RFM_Live"
   DTS:PackageType="5"
-  DTS:VersionBuild="2"
-  DTS:VersionGUID="{E39D8318-5E16-4214-8C2E-30FB74B0FF1D}">
+  DTS:VersionBuild="8"
+  DTS:VersionGUID="{D7375335-46BB-42E1-9F7B-11E04BA211D5}">
   <DTS:Property
     DTS:Name="PackageFormatVersion">8</DTS:Property>
   <DTS:ConnectionManagers>
@@ -45,7 +45,7 @@
       <DTS:ObjectData>
         <SQLTask:SqlTaskData
           SQLTask:Connection="{4B69F23B-1BF2-4972-AA09-83ED1D0C3BAA}"
-          SQLTask:SqlStatementSource="EXEC dbo.usp_RefreshCustomerRFMLive @AsOfDate = '20140630';" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+          SQLTask:SqlStatementSource="EXEC dbo.usp_RefreshCustomerRFMLive;" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
       </DTS:ObjectData>
     </DTS:Executable>
   </DTS:Executables>
