@@ -83,7 +83,7 @@ AS
 RETURN
 (
     SELECT
-        c.CustomerKey_Str,
+        CONVERT(NVARCHAR(20), c.CustomerID) AS CustomerKey_Str,
         CAST(MAX(s.OrderDate) AS DATETIME2(3)) AS LastPurchaseTimestamp,
         CAST(MAX(s.OrderDate) AS DATE) AS LastPurchaseDate,
         DATEDIFF(DAY, CAST(MAX(s.OrderDate) AS DATE), @AsOfDate) AS RecencyDays,
@@ -94,7 +94,7 @@ RETURN
             WHEN s.OrderDate >= DATEADD(DAY, -364, @AsOfDate)
             THEN s.OrderAmount ELSE CAST(0 AS DECIMAL(19,4)) END),
             CAST(0 AS DECIMAL(19,4))) AS Monetary365d
-    FROM dbo.DimCustomerProfiling AS c
+    FROM CompanyX.Sales.Customer AS c
     LEFT JOIN
     (
         SELECT
@@ -109,8 +109,8 @@ RETURN
         -- TODO: Decide which SalesOrderHeader.Status values count as completed purchases.
         GROUP BY h.CustomerID, h.SalesOrderID, h.OrderDate
     ) AS s
-        ON s.CustomerKey_Str = c.CustomerKey_Str
-    GROUP BY c.CustomerKey_Str
+        ON s.CustomerKey_Str = CONVERT(NVARCHAR(20), c.CustomerID)
+    GROUP BY c.CustomerID
 );
 GO
 
@@ -146,6 +146,8 @@ BEGIN
         (
             SELECT r.*, p.ClusterProfilingSK
             FROM dbo.ufn_ComputeCustomerRFM(@AsOfDate) AS r
+            INNER JOIN dbo.DimCustomerProfiling AS dc
+                ON dc.CustomerKey_Str = r.CustomerKey_Str
             LEFT JOIN dbo.DimClusterProfiling AS p
                 ON p.CustomerKey_Str = r.CustomerKey_Str
                AND p.IsCurrent = 1
