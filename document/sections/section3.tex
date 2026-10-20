@@ -1,0 +1,19 @@
+\chapter{Datawarehose Design}
+We propose our data warehouse design as below:
+
+\begin{figure}[htbp]
+    \centering % Căn giữa hình ảnh
+    \includegraphics[width=0.8\textwidth]{DWHdesign.png}
+    \caption{Đây là chú thích của hình ảnh.}
+    \label{fig:DWH_design} % Nhãn để dùng cho lệnh tham chiếu \ref{}
+\end{figure}
+
+At a first glance, we can observe that the blueprint follows a hybrid constellation / star-galaxy schema which consists of two fact tables, namely FactCustomerSnapshot, FactCustomerRFMLive; four dimensions including \verb|DimModelConfig|, \verb|DimClusterProfiling|, \verb|DimDate|, \verb|DimCustomerProfiling|. 
+\section{Context}
+
+Write the project background, business context, and objectives here.
+
+\subsection{Main issue}
+
+Describe the key problem statements, current bottlenecks, and target solutions here.
+
