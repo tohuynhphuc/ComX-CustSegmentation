@@ -228,6 +228,8 @@ BEGIN
         FROM dbo.ufn_ComputeCustomerRFM(
             @SnapshotDate
         ) AS r
+        INNER JOIN dbo.DimCustomerProfiling AS dc
+            ON dc.CustomerKey_Str = r.CustomerKey_Str
         WHERE r.LastPurchaseDate IS NOT NULL
           AND NOT EXISTS (
               SELECT 1

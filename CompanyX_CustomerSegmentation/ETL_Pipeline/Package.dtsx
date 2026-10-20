@@ -11,8 +11,8 @@
   DTS:LocaleID="8192"
   DTS:ObjectName="Package"
   DTS:PackageType="5"
-  DTS:VersionBuild="136"
-  DTS:VersionGUID="{6CC46B04-5E5C-42C7-B5BC-8A2EF6823707}">
+  DTS:VersionBuild="137"
+  DTS:VersionGUID="{3D4C29B8-3AA3-444B-8744-CC1B3873CA68}">
   <DTS:Property
     DTS:Name="PackageFormatVersion">8</DTS:Property>
   <DTS:ConnectionManagers>
@@ -162,7 +162,7 @@
       DTS:LocaleID="-1"
       DTS:ObjectName="Apply Customer Merge"
       DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2025; © 2025 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
-      DTS:ThreadHint="2">
+      DTS:ThreadHint="1">
       <DTS:Variables />
       <DTS:ObjectData>
         <SQLTask:SqlTaskData
@@ -4903,7 +4903,7 @@ ORDER BY c.CustomerID ASC;</property>
       DTS:LocaleID="-1"
       DTS:ObjectName="Generate Customer BatchID"
       DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2025; © 2025 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
-      DTS:ThreadHint="2">
+      DTS:ThreadHint="1">
       <DTS:Variables />
       <DTS:ObjectData>
         <SQLTask:SqlTaskData
@@ -4926,7 +4926,7 @@ ORDER BY c.CustomerID ASC;</property>
       DTS:LocaleID="-1"
       DTS:ObjectName="IL implementation"
       DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2025; © 2025 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
-      DTS:ThreadHint="2">
+      DTS:ThreadHint="1">
       <DTS:Variables />
       <DTS:ObjectData>
         <SQLTask:SqlTaskData
@@ -5484,7 +5484,7 @@ WHERE NOT EXISTS (
       DTS:LocaleID="-1"
       DTS:ObjectName="Prepare Customer Staging"
       DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2025; © 2025 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
-      DTS:ThreadHint="2">
+      DTS:ThreadHint="1">
       <DTS:Variables />
       <DTS:ObjectData>
         <SQLTask:SqlTaskData
@@ -6817,7 +6817,7 @@ where ProductID = ?</property>
       DTS:LocaleID="-1"
       DTS:ObjectName="SQL Get Max Date"
       DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2025; © 2025 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
-      DTS:ThreadHint="1">
+      DTS:ThreadHint="2">
       <DTS:Variables />
       <DTS:ObjectData>
         <SQLTask:SqlTaskData
@@ -8929,6 +8929,10 @@ ORDER BY c.CustomerID ASC;</property>
       <GraphLayout
         Capacity="32" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml">
         <NodeLayout
+          Size="185.6,41.6"
+          Id="Package\Apply Customer Merge"
+          TopLeft="690.38463042024,353.022734138807" />
+        <NodeLayout
           Size="152,42.8"
           Id="Package\Data Flow Task"
           TopLeft="226.394216046013,61.0681783547553" />
@@ -8941,13 +8945,33 @@ ORDER BY c.CustomerID ASC;</property>
           Id="Package\Dim Customer-Cluster Profiling"
           TopLeft="843.365374977134,133.230290943003" />
         <NodeLayout
-          Size="164.8,41.6"
-          Id="Package\SQL Get Max Date"
-          TopLeft="649.038457391046,25.4878791944369" />
+          Size="210.4,41.6"
+          Id="Package\Generate Customer BatchID"
+          TopLeft="426.442316979633,203.704549310837" />
+        <NodeLayout
+          Size="165.2,42.8"
+          Id="Package\IL implementation"
+          TopLeft="449.807701189755,134.701507486956" />
+        <NodeLayout
+          Size="148.8,41.6"
+          Id="Package\Load FactSales"
+          TopLeft="698.076938280076,215.765155287838" />
+        <NodeLayout
+          Size="201.6,41.6"
+          Id="Package\Prepare Customer Staging"
+          TopLeft="426.442316979633,275.696974943198" />
         <NodeLayout
           Size="165.2,42.8"
           Id="Package\Product Data Flow"
           TopLeft="651.105765585442,126.237884243943" />
+        <NodeLayout
+          Size="164.8,41.6"
+          Id="Package\SQL Get Max Date"
+          TopLeft="649.038457391046,25.4878791944369" />
+        <NodeLayout
+          Size="191.2,41.6"
+          Id="Package\Stage Customer Profiles"
+          TopLeft="427.403855462113,355.962128161806" />
         <NodeLayout
           Size="161.2,42.8"
           Id="Package\SubDimCustomer"
@@ -8956,6 +8980,10 @@ ORDER BY c.CustomerID ASC;</property>
           Size="149.2,42.8"
           Id="Package\truncate tables"
           TopLeft="880.576925966559,29.7984692882676" />
+        <NodeLayout
+          Size="168,42.8"
+          Id="Package\Update Watermark"
+          TopLeft="23.8942300846259,142.572709018499" />
         <EdgeLayout
           Id="Package.PrecedenceConstraints[Constraint]"
           TopLeft="732.572111488244,67.0878791944369">
@@ -9000,22 +9028,28 @@ ORDER BY c.CustomerID ASC;</property>
             <EdgeLabelCollection />
           </EdgeLayout.Labels>
         </EdgeLayout>
-        <NodeLayout
-          Size="168,42.8"
-          Id="Package\Update Watermark"
-          TopLeft="23.8942300846259,142.572709018499" />
-        <NodeLayout
-          Size="165.2,42.8"
-          Id="Package\IL implementation"
-          TopLeft="449.807701189755,134.701507486956" />
-        <NodeLayout
-          Size="201.6,41.6"
-          Id="Package\Prepare Customer Staging"
-          TopLeft="426.442316979633,275.696974943198" />
-        <NodeLayout
-          Size="191.2,41.6"
-          Id="Package\Stage Customer Profiles"
-          TopLeft="427.403855462113,355.962128161806" />
+        <EdgeLayout
+          Id="Package.PrecedenceConstraints[Constraint 2]"
+          TopLeft="532.025009084694,177.501507486956">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,26.203041823881"
+              Start="0,0"
+              End="0,18.703041823881">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,18.703041823881" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
         <EdgeLayout
           Id="Package.PrecedenceConstraints[Constraint 3]"
           TopLeft="525.123086220873,317.296974943198">
@@ -9038,10 +9072,6 @@ ORDER BY c.CustomerID ASC;</property>
             <EdgeLabelCollection />
           </EdgeLayout.Labels>
         </EdgeLayout>
-        <NodeLayout
-          Size="185.6,41.6"
-          Id="Package\Apply Customer Merge"
-          TopLeft="690.38463042024,353.022734138807" />
         <EdgeLayout
           Id="Package.PrecedenceConstraints[Constraint 4]"
           TopLeft="618.603855462113,375.292431150307">
@@ -9056,32 +9086,6 @@ ORDER BY c.CustomerID ASC;</property>
                   Capacity="5">
                   <mssgle:LineSegment
                     End="64.2807749581277,0" />
-                </mssgle:SegmentCollection>
-              </mssgle:Curve.Segments>
-            </mssgle:Curve>
-          </EdgeLayout.Curve>
-          <EdgeLayout.Labels>
-            <EdgeLabelCollection />
-          </EdgeLayout.Labels>
-        </EdgeLayout>
-        <NodeLayout
-          Size="210.4,41.6"
-          Id="Package\Generate Customer BatchID"
-          TopLeft="426.442316979633,203.704549310837" />
-        <EdgeLayout
-          Id="Package.PrecedenceConstraints[Constraint 2]"
-          TopLeft="532.025009084694,177.501507486956">
-          <EdgeLayout.Curve>
-            <mssgle:Curve
-              StartConnector="{assembly:Null}"
-              EndConnector="0,26.203041823881"
-              Start="0,0"
-              End="0,18.703041823881">
-              <mssgle:Curve.Segments>
-                <mssgle:SegmentCollection
-                  Capacity="5">
-                  <mssgle:LineSegment
-                    End="0,18.703041823881" />
                 </mssgle:SegmentCollection>
               </mssgle:Curve.Segments>
             </mssgle:Curve>
@@ -9112,10 +9116,6 @@ ORDER BY c.CustomerID ASC;</property>
             <EdgeLabelCollection />
           </EdgeLayout.Labels>
         </EdgeLayout>
-        <NodeLayout
-          Size="148.8,41.6"
-          Id="Package\Load FactSales"
-          TopLeft="698.076938280076,215.765155287838" />
       </GraphLayout>
     </LayoutInfo>
   </Package>
@@ -9856,6 +9856,65 @@ ORDER BY c.CustomerID ASC;</property>
     </Properties>
   </PipelineComponentMetadata>
   <TaskHost
+    design-time-name="Package\Load FactSales">
+    <LayoutInfo>
+      <GraphLayout
+        Capacity="4" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml">
+        <NodeLayout
+          Size="149.6,41.6"
+          Id="Package\Load FactSales\OLE DB Source"
+          TopLeft="224.999996647239,131.199998044968" />
+        <NodeLayout
+          Size="170.4,41.6"
+          Id="Package\Load FactSales\OLE DB Destination"
+          TopLeft="214.799996799231,238.399996447563" />
+        <EdgeLayout
+          Id="Package\Load FactSales.Paths[OLE DB Source Output]"
+          TopLeft="299.899996723235,172.799998044968">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,65.5999984025955"
+              Start="0,0"
+              End="0,58.0999984025955">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,58.0999984025955" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+      </GraphLayout>
+    </LayoutInfo>
+  </TaskHost>
+  <PipelineComponentMetadata
+    design-time-name="Package\Load FactSales\OLE DB Destination">
+    <Properties>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+      <Property>
+        <Name>TableInfoObjectType</Name>
+        <Value
+          type="q2:string">Table</Value>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata>
+  <PipelineComponentMetadata
+    design-time-name="Package\Load FactSales\OLE DB Source">
+    <Properties>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata>
+  <TaskHost
     design-time-name="Package\Product Data Flow">
     <LayoutInfo>
       <GraphLayout
@@ -10227,7 +10286,7 @@ ORDER BY c.CustomerID ASC;</property>
       <Property>
         <Name>OverwriteParamsSQLProp</Name>
         <Value
-          type="q2:boolean">false</Value>
+          type="q2:string">false</Value>
       </Property>
       <Property>
         <Name>UsedTableName</Name>
@@ -10237,10 +10296,87 @@ ORDER BY c.CustomerID ASC;</property>
       <Property>
         <Name>TableInfoObjectType</Name>
         <Value
-          type="q4:int">0</Value>
+          type="q4:string">0</Value>
       </Property>
       <Property>
         <Name>DataSourceViewID</Name>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata>
+  <TaskHost
+    design-time-name="Package\Stage Customer Profiles">
+    <LayoutInfo>
+      <GraphLayout
+        Capacity="8" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml">
+        <NodeLayout
+          Size="182.4,41.6"
+          Id="Package\Stage Customer Profiles\vPersonDemographics"
+          TopLeft="216.666664332151,68.333333209157" />
+        <NodeLayout
+          Size="154.8,42.8"
+          Id="Package\Stage Customer Profiles\Derived Column"
+          TopLeft="471.341647889838,67.0833283239601" />
+        <EdgeLayout
+          Id="Package\Stage Customer Profiles.Paths[OLE DB Source Output]"
+          TopLeft="399.066664332152,88.8083307665585">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="72.2749835576867,0"
+              Start="0,0"
+              End="64.7749835576867,0">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="64.7749835576867,0" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <NodeLayout
+          Size="173.6,41.6"
+          Id="Package\Stage Customer Profiles\stg Customer Profile"
+          TopLeft="463.599993091822,167.999997496605" />
+        <EdgeLayout
+          Id="Package\Stage Customer Profiles.Paths[Derived Column Output]"
+          TopLeft="549.57082049083,109.88332832396">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,58.1166691726448"
+              Start="0,0"
+              End="0,50.6166691726448">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,50.6166691726448" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+      </GraphLayout>
+    </LayoutInfo>
+  </TaskHost>
+  <PipelineComponentMetadata
+    design-time-name="Package\Stage Customer Profiles\stg Customer Profile">
+    <Properties>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+      <Property>
+        <Name>TableInfoObjectType</Name>
+        <Value
+          type="q2:string">Table</Value>
       </Property>
     </Properties>
   </PipelineComponentMetadata>
@@ -10342,142 +10478,6 @@ ORDER BY c.CustomerID ASC;</property>
   </PipelineComponentMetadata>
   <PipelineComponentMetadata
     design-time-name="Package\SubDimCustomer\OLE DB Destination">
-    <Properties>
-      <Property>
-        <Name>DataSourceViewID</Name>
-      </Property>
-      <Property>
-        <Name>TableInfoObjectType</Name>
-        <Value
-          type="q2:string">Table</Value>
-      </Property>
-    </Properties>
-  </PipelineComponentMetadata>
-  <TaskHost
-    design-time-name="Package\Stage Customer Profiles">
-    <LayoutInfo>
-      <GraphLayout
-        Capacity="8" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml">
-        <NodeLayout
-          Size="182.4,41.6"
-          Id="Package\Stage Customer Profiles\vPersonDemographics"
-          TopLeft="216.666664332151,68.333333209157" />
-        <NodeLayout
-          Size="154.8,42.8"
-          Id="Package\Stage Customer Profiles\Derived Column"
-          TopLeft="471.341647889838,67.0833283239601" />
-        <EdgeLayout
-          Id="Package\Stage Customer Profiles.Paths[OLE DB Source Output]"
-          TopLeft="399.066664332152,88.8083307665585">
-          <EdgeLayout.Curve>
-            <mssgle:Curve
-              StartConnector="{assembly:Null}"
-              EndConnector="72.2749835576867,0"
-              Start="0,0"
-              End="64.7749835576867,0">
-              <mssgle:Curve.Segments>
-                <mssgle:SegmentCollection
-                  Capacity="5">
-                  <mssgle:LineSegment
-                    End="64.7749835576867,0" />
-                </mssgle:SegmentCollection>
-              </mssgle:Curve.Segments>
-            </mssgle:Curve>
-          </EdgeLayout.Curve>
-          <EdgeLayout.Labels>
-            <EdgeLabelCollection />
-          </EdgeLayout.Labels>
-        </EdgeLayout>
-        <NodeLayout
-          Size="173.6,41.6"
-          Id="Package\Stage Customer Profiles\stg Customer Profile"
-          TopLeft="463.599993091822,167.999997496605" />
-        <EdgeLayout
-          Id="Package\Stage Customer Profiles.Paths[Derived Column Output]"
-          TopLeft="549.57082049083,109.88332832396">
-          <EdgeLayout.Curve>
-            <mssgle:Curve
-              StartConnector="{assembly:Null}"
-              EndConnector="0,58.1166691726448"
-              Start="0,0"
-              End="0,50.6166691726448">
-              <mssgle:Curve.Segments>
-                <mssgle:SegmentCollection
-                  Capacity="5">
-                  <mssgle:LineSegment
-                    End="0,50.6166691726448" />
-                </mssgle:SegmentCollection>
-              </mssgle:Curve.Segments>
-            </mssgle:Curve>
-          </EdgeLayout.Curve>
-          <EdgeLayout.Labels>
-            <EdgeLabelCollection />
-          </EdgeLayout.Labels>
-        </EdgeLayout>
-      </GraphLayout>
-    </LayoutInfo>
-  </TaskHost>
-  <PipelineComponentMetadata
-    design-time-name="Package\Stage Customer Profiles\stg Customer Profile">
-    <Properties>
-      <Property>
-        <Name>DataSourceViewID</Name>
-      </Property>
-      <Property>
-        <Name>TableInfoObjectType</Name>
-        <Value
-          type="q2:string">Table</Value>
-      </Property>
-    </Properties>
-  </PipelineComponentMetadata>
-  <TaskHost
-    design-time-name="Package\Load FactSales">
-    <LayoutInfo>
-      <GraphLayout
-        Capacity="4" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml">
-        <NodeLayout
-          Size="149.6,41.6"
-          Id="Package\Load FactSales\OLE DB Source"
-          TopLeft="224.999996647239,131.199998044968" />
-        <NodeLayout
-          Size="170.4,41.6"
-          Id="Package\Load FactSales\OLE DB Destination"
-          TopLeft="214.799996799231,238.399996447563" />
-        <EdgeLayout
-          Id="Package\Load FactSales.Paths[OLE DB Source Output]"
-          TopLeft="299.899996723235,172.799998044968">
-          <EdgeLayout.Curve>
-            <mssgle:Curve
-              StartConnector="{assembly:Null}"
-              EndConnector="0,65.5999984025955"
-              Start="0,0"
-              End="0,58.0999984025955">
-              <mssgle:Curve.Segments>
-                <mssgle:SegmentCollection
-                  Capacity="5">
-                  <mssgle:LineSegment
-                    End="0,58.0999984025955" />
-                </mssgle:SegmentCollection>
-              </mssgle:Curve.Segments>
-            </mssgle:Curve>
-          </EdgeLayout.Curve>
-          <EdgeLayout.Labels>
-            <EdgeLabelCollection />
-          </EdgeLayout.Labels>
-        </EdgeLayout>
-      </GraphLayout>
-    </LayoutInfo>
-  </TaskHost>
-  <PipelineComponentMetadata
-    design-time-name="Package\Load FactSales\OLE DB Source">
-    <Properties>
-      <Property>
-        <Name>DataSourceViewID</Name>
-      </Property>
-    </Properties>
-  </PipelineComponentMetadata>
-  <PipelineComponentMetadata
-    design-time-name="Package\Load FactSales\OLE DB Destination">
     <Properties>
       <Property>
         <Name>DataSourceViewID</Name>
