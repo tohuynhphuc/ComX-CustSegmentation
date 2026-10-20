@@ -1,6 +1,6 @@
 from datetime import date, timedelta
 
-import mysql.connector
+#import mysql.connector
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
