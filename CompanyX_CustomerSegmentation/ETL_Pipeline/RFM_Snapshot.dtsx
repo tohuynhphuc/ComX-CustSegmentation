@@ -11,8 +11,8 @@
   DTS:LocaleID="8192"
   DTS:ObjectName="RFM_Snapshot"
   DTS:PackageType="5"
-  DTS:VersionBuild="2"
-  DTS:VersionGUID="{A7575282-77E8-4408-B18A-9B9B728A5B00}">
+  DTS:VersionBuild="3"
+  DTS:VersionGUID="{A959F292-82F3-4367-87E1-A7E1CD9957CE}">
   <DTS:Property
     DTS:Name="PackageFormatVersion">8</DTS:Property>
   <DTS:ConnectionManagers>
@@ -45,7 +45,7 @@
       <DTS:ObjectData>
         <SQLTask:SqlTaskData
           SQLTask:Connection="{70216564-EC66-41B1-852A-74873A09982D}"
-          SQLTask:SqlStatementSource="EXEC dbo.usp_AppendMonthlyRFMSnapshot&#xA;    @SnapshotDate = '20140630';" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+          SQLTask:SqlStatementSource="EXEC dbo.usp_AppendMonthlyRFMSnapshot&#xA;    @SnapshotDate = EOMONTH(DATEADD(MONTH, -1, GETDATE()));" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
       </DTS:ObjectData>
     </DTS:Executable>
   </DTS:Executables>

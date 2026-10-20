@@ -11,8 +11,8 @@
   DTS:LocaleID="8192"
   DTS:ObjectName="RFM_Live"
   DTS:PackageType="5"
-  DTS:VersionBuild="2"
-  DTS:VersionGUID="{E39D8318-5E16-4214-8C2E-30FB74B0FF1D}">
+  DTS:VersionBuild="6"
+  DTS:VersionGUID="{6D2F2B60-04B2-41A3-9BE9-CE39A179121E}">
   <DTS:Property
     DTS:Name="PackageFormatVersion">8</DTS:Property>
   <DTS:ConnectionManagers>
@@ -45,7 +45,7 @@
       <DTS:ObjectData>
         <SQLTask:SqlTaskData
           SQLTask:Connection="{4B69F23B-1BF2-4972-AA09-83ED1D0C3BAA}"
-          SQLTask:SqlStatementSource="EXEC dbo.usp_RefreshCustomerRFMLive @AsOfDate = '20140630';" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+          SQLTask:SqlStatementSource="&#xA;DECLARE @AsOfDate DATE;&#xA;&#xA;SELECT @AsOfDate = MAX(CAST(OrderDate AS DATE))&#xA;FROM CompanyX.Sales.SalesOrderHeader;&#xA;&#xA;IF @AsOfDate IS NOT NULL&#xA;BEGIN&#xA;    EXEC dbo.usp_RefreshCustomerRFMLive&#xA;        @AsOfDate = @AsOfDate;&#xA;END;&#xA;" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
       </DTS:ObjectData>
     </DTS:Executable>
   </DTS:Executables>

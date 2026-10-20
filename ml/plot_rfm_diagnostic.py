@@ -406,7 +406,7 @@ def main():
     )
 
     parser.add_argument(
-        "--snapshot", type=int, default=20131231, help="Snapshot date key"
+        "--snapshot", type=int, default=20140630, help="Snapshot date key"
     )
 
     parser.add_argument(

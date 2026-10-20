@@ -33,8 +33,8 @@ def fill_null_segments(out, date_key):
     rows = [(int(r.ModelConfigKey), r.ClusterSegment, r.CustomerKey, date_key)
             for r in out.itertuples(index=False)]
     changed = execute_many(
-        "UPDATE FactCustomerSnapshot SET ModelConfigKey = %s, ClusterSegment = %s "
-        "WHERE CustomerKey = %s AND DateKey = %s AND ClusterSegment IS NULL",
+        "UPDATE dbo.FactCustomerSnapshot SET ModelConfigKey = ?, ClusterSegment = ? "
+        "WHERE CustomerKey_Str = ? AND SnapshotDateKey = ? AND ClusterSegment IS NULL",
         rows)
     print(f'   {date_key}: filled {changed} of {len(rows)} rows.')
     if changed != len(rows):
