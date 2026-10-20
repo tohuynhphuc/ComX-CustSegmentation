@@ -1,0 +1,187 @@
+\documentclass[a4paper, 12pt, notitlepage]{report}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+\usepackage{tgheros}
+
+\usepackage{array}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{biblatex}
+\usepackage{blindtext}
+\usepackage{enumerate}
+\usepackage{fancyhdr}
+\usepackage{float}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{lipsum}
+\usepackage{listings}
+\usepackage{multicol}
+\usepackage{tikz}
+\usepackage{xcolor}
+\usepackage{tabulary}
+\usepackage[unicode]{hyperref}
+
+\addbibresource{sample.bib}
+\graphicspath{{images/}}
+
+\renewcommand{\familydefault}{\rmdefault}
+\renewcommand{\figurename}{Figure}
+
+\geometry{
+	a4paper,
+	left=20mm,
+	right=20mm,
+	bindingoffset=0mm,
+	top=30mm,
+	bottom=25mm,
+	headheight=30pt
+}
+
+\linespread{1.3}
+
+\newcommand{\linia}{\rule{\linewidth}{0.5pt}}
+
+\makeatletter
+\renewcommand{\maketitle}{
+\begin{center}
+	\vspace{2ex}
+	{ \huge \textsc{\@title} }
+	\vspace{1ex}
+	\\ \linia\\ \@author \hfill \@date
+	\vspace{4ex}
+\end{center}
+}
+\makeatother
+
+\setlength{\headheight}{30pt}
+\fancyhead{}
+
+\fancyhead[L]{
+    \begin{tabular}{rl}
+        \begin{picture}(15,10)(0,0)
+            \put(0,-8){
+                \includegraphics[width=8mm, height=8mm]{vgu_logo.png}
+            }
+        \end{picture}
+        &
+        \begin{tabular}{l}
+            \textbf{\textsf{Vietnamese-German University}}\\
+            \textbf{\textsf{Department of Computer Science}}
+        \end{tabular}
+    \end{tabular}
+}
+
+\fancyhead[R]{}
+
+\fancyfoot{}
+\fancyfoot[L]{\ttfamily Programming 2 Tiny Project}
+\fancyfoot[R]{\ttfamily Page \thepage}
+
+\fancypagestyle{plain}{
+    \fancyhead{}
+    \fancyfoot{}
+    \fancyfoot[L]{\ttfamily Programming 2 Tiny Project}
+    \fancyfoot[R]{\ttfamily Page \thepage}
+}
+
+\renewcommand{\headrulewidth}{0.2pt}
+\renewcommand{\footrulewidth}{0.2pt}
+
+\lstset{
+    language=C++,
+    basicstyle=\ttfamily\small,
+    aboveskip={1.0\baselineskip},
+    belowskip={1.0\baselineskip},
+    columns=fixed,
+    extendedchars=true,
+    breaklines=true,
+    tabsize=4,
+    prebreak=\raisebox{0ex}[0ex][0ex]{\ensuremath{\hookleftarrow}},
+    frame=lines,
+    showtabs=false,
+    showspaces=false,
+    showstringspaces=false,
+    keywordstyle=\color[rgb]{0.627, 0.126, 0.941},
+    commentstyle=\color[rgb]{1, 0, 0},
+    stringstyle=\color[rgb]{0.133, 0.545, 0.133},
+    numbers=left,
+    numberstyle=\small,
+    stepnumber=1,
+    numbersep=10pt,
+    captionpos=t,
+    escapeinside={\%*}{*)}
+}
+
+\begin{document}
+\hypersetup{pageanchor=false}
+\begin{titlepage}
+\begin{center}
+    VIETNAMESE - GERMAN UNIVERSITY \\ DEPARTMENT OF COMPUTER SCIENCE
+\end{center}
+
+\vspace{1cm}
+
+\begin{center}
+    \includegraphics[width=3cm]{vgu_logo.png}
+\end{center}
+
+\vspace{2cm}
+
+\begin{center}
+    \begin{tabular}{c}
+        \textbf{\Large PROGRAMMING 2 TINY PROJECT REPORT} \\
+        \\
+        \\
+        \textbf{\Large NAME HERE :D}                      \\
+        \vspace{1cm}
+    \end{tabular}
+\end{center}
+
+\vspace{2cm}
+
+\begin{center}
+    \begin{tabular}{rl}
+        \hspace{5.1cm} \textit{Instructor:} & ............., PhD             \\
+        \\
+        \textit{Student 1:} & Võ Minh Duy - 10423028         \\
+        \textit{Student 2:} & Nguyễn Hà Khải - 10423053      \\
+        \textit{Student 3:} & Trần Ninh Nhật Minh - 10423077 \\
+        \textit{Student 4:} & Tô Huỳnh Phúc - 10423093       \\
+        \textit{Student 5:} & Ninh Hoàng Quân - 10423097     \\
+    \end{tabular}
+\end{center}
+
+\vspace{2cm}
+\begin{center}
+    { \footnotesize BÌNH DƯƠNG CITY, 06/2025 }
+\end{center}
+\end{titlepage}
+\hypersetup{pageanchor=true}
+
+\pagenumbering{roman}
+\pagestyle{fancy}
+
+\newpage
+\begin{abstract}
+    \lipsum[1-2]
+\end{abstract}
+
+\newpage
+\listoftables
+\listoffigures
+
+\newpage
+\renewcommand{\contentsname}{Contents}
+\vspace{1cm}
+\tableofcontents
+
+\newpage
+\pagenumbering{arabic}
+
+\chapter{Introduction}
+\section{Context}
+
+\subsection{Main issue}
+\end{document}

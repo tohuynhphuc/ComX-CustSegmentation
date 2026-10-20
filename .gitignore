@@ -1,4 +1,80 @@
 # ==========================================
+# LaTeX Auxiliary and Build Files
+# ==========================================
+*.aux
+*.bcf
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.lof
+*.lot
+*.out
+*.run.xml
+*.synctex*
+*.toc
+*.idx
+*.ind
+*.ilg
+*.nav
+*.snm
+*.vrb
+*.loa
+*.lol
+*.dvi
+*.xdv
+*-converted-to.*
+
+# Uncomment the line below if you do NOT want to track compiled PDFs on GitHub:
+# *.pdf
+
+# ==========================================
+# Python & Machine Learning
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+ENV*/
+
+# Jupyter & Testing
+.ipynb_checkpoints/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ==========================================
+# Apache Airflow
+# ==========================================
+airflow.db
+airflow.cfg
+airflow-webserver.pid
+standalone_admin_password.txt
+logs/
+
+# ==========================================
 # Visual Studio
 # ==========================================
 .vs/
@@ -8,9 +84,7 @@
 *.sln.docstates
 *.rsuser
 
-# ==========================================
 # Build outputs
-# ==========================================
 [Bb]in/
 [Oo]bj/
 [Dd]ebug/
@@ -39,33 +113,28 @@ packages/
 *.nupkg
 
 # ==========================================
-# Temporary / backup files
+# OS / Editor files
 # ==========================================
-*.bak
-*.cache
-*.pdb
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+Desktop.ini
 *~
 *.swp
 *.swo
-Thumbs.db
-Desktop.ini
-=======
-# Virtual Environment
-.venv/
-venv/
-ENV/
-env/
+*.bak
+*.cache
+*.pdb
 
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
-
-# OS / Editor files
 .vscode/
 .idea/
-.DS_Store
-Thumbs.db
 
+# ==========================================
 # Environment variables & secrets
+# ==========================================
 .env
+.env.*
+!.env.example
