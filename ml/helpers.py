@@ -1,6 +1,6 @@
 from datetime import date, timedelta
 
-#import mysql.connector
+# import mysql.connector
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
@@ -8,19 +8,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
 import os
 import pyodbc
-
-# ENGINE = create_engine(
-#     'mysql+mysqlconnector://root:root@localhost:3306/CompanyX_DW')
-
-# MYSQL_CONFIG = {
-#     'host': 'localhost',
-#     'port': 3306,
-#     'user': 'root',
-#     'password': 'root',
-#     'database': 'CompanyX_DW',
-#     'auth_plugin': 'mysql_native_password',
-# }
-
 
 # SQL Server connection; match SERVER to the "Server name" in SSMS.
 # Environment variables let every teammate use their own instance without code edits.
