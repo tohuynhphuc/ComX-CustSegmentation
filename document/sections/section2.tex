@@ -1,9 +1,35 @@
 \chapter{Theoretical Framework \& Industry Benchmark Case Studies}
-\section{Context}
 
-Write the project background, business context, and objectives here.
+\section{Case Study Summary}
 
-\subsection{Main issue}
+To formulate an effective solution for CompanyX, three industry benchmarks utilizing distinct segmentation methodologies were evaluated:
+\begin{itemize}
+    \item \textbf{Black Diamond (RFM Segmentation):} Source: Lexer (2025). Specializes in high-end technical climbing and outdoor equipment, transitioning from wholesale to Direct-to-Consumer (D2C) online. Faced with messy data across disparate systems, mass email marketing, and high customer churn, they established a Single Customer View (SCV) and applied Recency, Frequency, and Monetary (RFM) segmentation. Personalized email campaigns targeting inactive ($>180$ days) and lapsed ($>1$ year) customers yielded a +1,101\% revenue per email increase, a 50\% reduction in CPA, and a 2x Return on Advertising Spend (ROAS).
+    \item \textbf{Zappos (K-Means Clustering):} Source: Towards AI (2020). An e-commerce platform for footwear and apparel. Facing uniform marketing inefficiencies, they deployed unsupervised K-Means clustering on Annual Income and Spending Score data. Using the Elbow Method, they identified 5 distinct customer groups (Target/VIPs, Savers, Spenders, Budget-conscious, and Standard), enabling tailored marketing campaigns and optimized outreach.
+    \item \textbf{DANA Indonesia (Data Warehouse + RFM + K-Means):} Source: Bima Putra Pratama / Alibaba Cloud (2020). \textit{Corporate Profile:} Financial Technology (Fintech) digital wallet operating a B2C model. \textit{Business Pain Points:} Simple heuristic rules failed due to highly skewed transactional data, and they lacked an automated data warehouse architecture to daily ingest, standardize, score, and store customer segments. \textit{Solution:} Built an end-to-end customer segmentation pipeline utilizing Alibaba Cloud's MaxCompute (Data Warehouse) and Machine Learning Platform for AI (PAI), applying log transformations, K-Means clustering ($k=5$), and daily automated batch serving. \textit{Results:} Enabled seamless tracking of historical behavioral shifts over time and allowed marketing teams to query user segments directly via SQL and dashboards.
+\end{itemize}
 
-Describe the key problem statements, current bottlenecks, and target solutions here.
+\section{Comparative Analysis Matrix}
 
+\begin{table}[htbp]
+\centering
+\caption{Comparative Analysis Matrix}
+\label{tab:comparative_analysis}
+\small
+\begin{tabular}{|p{3.2cm}|p{3.5cm}|p{3.5cm}|p{4.5cm}|}
+\hline
+\textbf{Methodology} & \textbf{Nature} & \textbf{Complexity} & \textbf{Key Advantages} \\ \hline
+\textbf{RFM Segmentation} & Rule-based classification (Recency, Frequency, Monetary). & Low, calculated using simple SQL/BI logic, no ML required. & Easy to implement, low cost, suitable for re-engaging direct marketing campaigns. \\ \hline
+\textbf{K-Means Clustering} & Unsupervised machine learning (Unsupervised ML) using features like Annual Income and Spending Score to find natural customer groupings. & Medium, requires applying the Elbow Method to find $k=5$ clusters and scaling feature data before processing. & Discovers hidden behavioral patterns based on income and spending habits (e.g., Target VIPs vs. High Spenders). \\ \hline
+\textbf{Data Warehouse + RFM + K-Means} & Integrates RFM segmentation with K-Means clustering on a Data Warehouse platform. & High, requires skewed data transformation pipelines (log transform/standardization) and daily automated snapshot saving. & Automated segmentation for millions of users, allowing easy querying of behavioral shifts over time. \\ \hline
+\end{tabular}
+\end{table}
+
+\section{Problem Statement}
+
+Currently, CompanyX lacks a comprehensive, integrated customer analytics framework to track purchasing patterns and profile customer behaviors. Based on empirical transactional analysis, the primary strategic goal is to formulate a data-driven solution addressing three critical challenges:
+\begin{itemize}
+    \item \textbf{Customer Retention \& Churn Mitigation:} How can CompanyX re-engage inactive customers and effectively retain the 62.9\% majority of one-time buyers who drop off after their initial order?
+    \item \textbf{Cross-Selling Optimization:} How can we eliminate cross-selling inefficiencies and drive basket expansion for over 9,000 B2C customers who purchased bikes but never bought complementary accessories or apparel?
+    \item \textbf{Data-Driven Segmentation Framework:} How can we establish a scalable Data Warehouse and machine learning pipeline leveraging K-Means Clustering to automatically segment CompanyX's customer base into distinct, actionable value tiers and behavioral profiles?
+\end{itemize}
