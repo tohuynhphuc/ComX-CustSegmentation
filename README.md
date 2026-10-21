@@ -14,7 +14,7 @@ A customer-focused Business Intelligence system built with **SQL Server**, **SQL
 | Python training scripts | Train five-cluster K-Means models and save model versions in SQL Server |
 | Power BI | Customer, demographic, segmentation and business analysis dashboards |
 
-**Two RFM views serve different purposes:** `FactCustomerRFMLive` stores values evaluated at each customer's latest purchase and is refreshed after relevant sales changes. `FactCustomerSnapshot` evaluates customers at each month-end, allowing inactivity and segment changes to be examined over time. The Power BI report currently uses the **2014-06-30 snapshot** as its main customer-analysis reference.
+**Two RFM views serve different purposes:** `FactCustomerRFMLive` normally stores values evaluated at each customer's latest purchase and is refreshed after relevant sales changes. `FactCustomerSnapshot` evaluates customers at each month-end, allowing inactivity and segment changes to be examined over time. For the current Power BI demonstration, **Step 12** explicitly synchronizes matching live-table rows with the **2014-06-30 snapshot** so the live-based visuals use the same historical analysis date. This is a reporting preparation step, not the ordinary purchase-time live workflow.
 
 ## Requirements
 
@@ -188,7 +188,35 @@ FROM dbo.FactCustomerRFMLive
 WHERE ClusterSegment IS NULL OR ModelConfigKey IS NULL;
 ```
 
-Once the two jobs run successfully, **customer and live RFM processing (every minute)** and **monthly snapshots (at 00:05 on the 1st)** are automated. Reopen/refresh the Power BI report at `PowerBI/BI_CUSTOMER_SEGMENTATION_FINAL.pbix` to verify its connection and displayed data; its current primary analytical population is the June 30, 2014 snapshot.
+Once the two jobs run successfully, **customer and live RFM processing (every minute)** and **monthly snapshots (at 00:05 on the 1st)** are automated. For the current Power BI demonstration, complete Step 12 before refreshing the dashboard.
+
+### 12. Synchronize the live table with the June 30, 2014 snapshot for Power BI
+
+The current Power BI report uses **June 30, 2014** as its historical reference date. After historical snapshots have been classified and the live table has been initialized (Steps 5–8), execute this **one-time reporting setup** in SSMS so the matching rows in `FactCustomerRFMLive` use the snapshot's RFM values and segment assignments:
+
+```sql
+USE CompanyX_DataWarehouse;
+GO
+
+UPDATE l
+SET
+    l.ClusterSegment = s.ClusterSegment,
+    l.ModelConfigKey = s.ModelConfigKey,
+    l.RecencyDays = s.RecencyDays,
+    l.Frequency365d = s.Frequency365d,
+    l.Monetary365d = s.Monetary365d
+FROM dbo.FactCustomerRFMLive AS l
+INNER JOIN dbo.FactCustomerSnapshot AS s
+    ON l.CustomerKey_Str = s.CustomerKey_Str
+WHERE s.SnapshotDateKey = 20140630;
+```
+
+**Important:** This update changes **existing matching live rows only**; it does not insert customers missing from `FactCustomerRFMLive`. It intentionally replaces purchase-time RFM values with **snapshot-date RFM** for the Power BI demonstration. It does not change `LastPurchaseDate`/`AsOfDate` or other live metadata. Therefore, treat the result as a **2014 reporting view**, not as live purchase-time RFM data.
+
+If the one-minute **Customer + Live RFM** job continues running and detects new sales changes, it may recalculate affected rows and replace some of these synchronized values. To keep a fixed June 2014 dashboard for a presentation, **temporarily disable or pause the one-minute job after verifying it works**, execute the update, refresh Power BI, and re-enable the job when you want normal live processing to resume. Do not leave the job disabled if you expect live automation.
+
+Finally, open or refresh `PowerBI/BI_CUSTOMER_SEGMENTATION_FINAL.pbix` and verify that the visuals using the live table align with the **2014-06-30** snapshot. Visuals already using `FactCustomerSnapshot` do not require this update.
+
 
 ## Annual model retraining (separate from the two SQL Agent jobs)
 
