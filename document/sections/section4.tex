@@ -1,23 +1,23 @@
-\chapter{System Workflow}
+\chapter{ETL Pipeline and Automation}\label{chap:workflow}
 
 \section{The General View}
-Before diving into the complex ETL pipeline, readers should examine the general workflow of our system as follows:
+Figure~\ref{fig:system_workflow} summarizes the two complementary data paths and annual model training. The customer-demographics load and purchase-triggered RFM path support operational decisions; the monthly snapshot path preserves the state of customers at a common evaluation date.
 
 \begin{figure}[htbp]
     \centering % Căn giữa hình ảnh
     \includegraphics[width=0.8\textwidth]{finalSystemWorkflow.png}
-    \caption{System Workflow: the image presents a high-level procedure about how transactions made by customers are processed.}
+    \caption{High-level flow from CompanyX transactions to RFM facts, model configurations, and reporting.}
     \label{fig:system_workflow} % Nhãn để dùng cho lệnh tham chiếu \ref{}
 \end{figure}
 
-At the bottom of the figure, two different paths can be observed. The first process starts with customers purchasing items from CompanyX. Then, those transactions go through our ETL steps before reaching the data warehouse and are stored in \textbf{FactCustomerRFMLive}. Regardless of which operation(insert, update) is performed (as mentioned in \ref{subsec:factcustomerRFMlive}), the results are a new R, F, and M value with updated last purchase date, and remarkably a (near) real-time clustering. This is done by using metrics stored in DimModelConfig to normalize RFM before computing it Euclidean distances against centroid values to finalized the cluster segment.
+The first path begins with a customer transaction. The deployed one-minute SSIS jobs load changed customer profiles and refresh RFM for affected customers in \textbf{FactCustomerRFMLive}. The Python scorer then applies the latest active configuration from \texttt{DimModelConfig}. It log-transforms and standardizes the purchase-time RFM features, computes distances to stored centroids, and writes back the segment and model key. Because this view is evaluated on the most recent purchase date, a refreshed customer's recency is zero by design; customers are not rescored simply because a day passes.
 
-The second process happens at the end of each month where customers' RFM values at that specific date(snapshot) are captured and inserted into the \textbf{FactCustomerSnapshot}. Similar to the \textbf{FactCustomerRFMLive}, we get the cluster segment from the DimModelConfig. What\'s more, the data in this fact table will be fetched annually by our data scientists python codebase to retrain our K-means model. Following that, These new metrics are written back to the DimModelConfig and act as the active model version for the next year's customer segment.
+The second path is scheduled for 00:05 on the first day of each month. It computes RFM as of the \emph{previous month-end} directly from source transactions and appends the result to \textbf{FactCustomerSnapshot}. The historical snapshot scoring procedure uses stored model definitions. These snapshots are also the training source for new annual K-Means versions: training takes the year-end snapshot and writes scaler statistics, centroids, and segment mappings into \texttt{DimModelConfig} for subsequent scoring.
 
-Finally, the BI developer will take information from the data warehouse to construct meaningful charts.
+For the historical initial load, the team used \texttt{bootstrap.py} to create the first 2011 model and retrospectively label early snapshots once that model was available. Subsequent models were trained on the 2012 and 2013 year-end snapshots using \texttt{train\_model.py}; no 2014 model was trained because source transactions end on 30 June 2014. This historical reconstruction must be distinguished from predictions genuinely available in those earlier months. The Power BI view discussed in Chapter~\ref{chap:power_bi} takes the 30 June 2014 historical snapshot as its final reference state.
 
 \section{ETL Pipeline \& Data Flow}
-We present the readers with control flows of the system inside SSIS package. For further details, please refer to our submitted system resources.
+This section follows the three SSIS packages supplied in the project: \texttt{Package\_Customer\_}\linebreak[1]\texttt{Incremental.dtsx}, \texttt{RFM\_Live.dtsx}, and \texttt{RFM\_Snapshot.dtsx}. The following screenshots and SQL excerpts are from the team's implementation; full routine definitions are included in the system resources. The customer and live packages have been deployed on a one-minute schedule, while the snapshot package is scheduled monthly.
 
 \subsection{Customer Control Flow}
 
@@ -28,7 +28,7 @@ We present the readers with control flows of the system inside SSIS package. For
     \label{fig:customer_control_flow} % Nhãn để dùng cho lệnh tham chiếu \ref{}
 \end{figure}
 
-In the above figure, we show the overview of DimClusterProfiling and DimCustomerProfiling creation. First, a SQL task is executed to generate new bacht ids: 
+In the above figure, we show the overview of DimClusterProfiling and DimCustomerProfiling creation. First, a SQL task is executed to generate a new batch identifier: 
 
 \begin{lstlisting}[caption={Batch ID Generation}, label={lst:batch_gen}]
 SELECT CONVERT(VARCHAR(36), NEWID()) AS BatchID;
@@ -50,7 +50,7 @@ Following up, we examine the data flow inside Stage Customer Profiles:
 
 Overall, there are three components:
 \begin{itemize}
-    \item{vPersonDemographics:} is the Source OLE DB block, which is used to query data from CompanyX database. After our careful data exploration, we came up with the SQL command:
+    \item[\textbf{vPersonDemographics:}] the OLE DB Source extracts changed demographic records from the CompanyX operational database:
     \begin{lstlisting}[caption={Table Selection}, label={lst:tab_select}]
 SELECT
     c.CustomerID AS CustomerKey,
@@ -97,20 +97,20 @@ WHERE d.DateFirstPurchase IS NOT NULL
        )
   );
     \end{lstlisting}
-    To summarize, the script selects customers' demographics data that needs to be be added or updated in the data warehouse. Interestingly, we have the WHERE clause which filters for customers with purchases who either do not exist in the warehouse or have outdated details. By utilizing EXCEPT clauses inside EXISTS conditions, it efficiently detects any changes in key attributes—such as personal profile data or geographical income data—acting as an incremental data load filter.
+    The extraction selects customers with a first purchase whose relevant demographic attributes are missing or different from the warehouse's current values. The \texttt{EXCEPT} predicates compare groups of attributes, including nullable values, without requiring a complete reload on every execution. This is a \emph{change-detection} form of incremental loading rather than a source timestamp watermark.
 
-    \item{Derived Column:} cleans input data in case there are anomalies
+    \item[\textbf{Derived Column:}] normalizes input values and handles missing demographic attributes before loading into staging.
     \begin{figure}[htbp]
     \centering % Căn giữa hình ảnh
     \includegraphics[width=0.8\textwidth]{DerivedColumn.png}
     \caption{Derived Column: input data cleaning step.}
     \label{fig:derived_col} % Nhãn để dùng cho lệnh tham chiếu \ref{}
 \end{figure}
-    Notably, we focused on handling NULL values with the decision that it would be converted to default fallback such as "Unknown", $0$, or "U"
-    \item{stg Customer Profile:} creates the table \ref{subsec:stg_tab} to prepare for Merge process
+    The configured fallback values include ``Unknown, 0, and ``U for selected attributes; these are data-cleaning conventions, not evidence that the original source value is known.
+    \item[\textbf{stg Customer Profile:}] the destination writes the transformed rows into the staging table described in Section~\ref{subsec:stg_tab}, ready for the T-SQL merge.
 \end{itemize}
 
-Finally, the process ends with the SQL task Apply Customer Merge, which is vital to apply SCD tracking to each dimension:
+Finally, the \emph{Apply Customer Merge} SQL task executes the batch procedure if rows were staged. That procedure applies Type 0/1 customer rules and Type 2 demographic history in a transaction:
 \begin{lstlisting}[caption={Merge}, label={lst:merge}]
 DECLARE @BatchID UNIQUEIDENTIFIER = CONVERT(UNIQUEIDENTIFIER, ?);
 IF EXISTS (
@@ -130,7 +130,9 @@ END;
     \caption{FactCustomerRFMLive handling.}
     \label{fig:RFM_live} % Nhãn để dùng cho lệnh tham chiếu \ref{}
 \end{figure}
-pass
+The first SSIS task, \emph{Refresh Customer RFM Live}, calls \texttt{usp\_RefreshCustomerRFMLive}. A stored watermark tracks the last processed source modification timestamp. Changes to sales headers or order details identify the affected customers; their full order history is aggregated once, using the customer's latest purchase date as the analysis date. The result is merged into \texttt{FactCustomerRFMLive} (insert for a new customer, update for a previously loaded customer).
+
+The second, enabled task is \emph{Score Live Customers}; its Python script is \texttt{live\_clustering.py}. It loads the \emph{latest active} model version, applies saved scaling parameters and centroids, and updates customers whose model key or segment has changed. An older SQL live-clustering task remains in the repository but is disabled in the deployed package and is not the operational scoring path. The approximately one-minute job interval makes this a \emph{near-real-time batch} process rather than event-by-event synchronous processing.
 
 \subsection{RFM Snapshot}
 \begin{figure}[H]
@@ -140,9 +142,8 @@ pass
     \label{fig:RFM_snapshot} % Nhãn để dùng cho lệnh tham chiếu \ref{}
 \end{figure}
 
-The first block Append Monthly Customer Snapshot will calculate the RFM values monthly for the \textbf{FactCustomerSnapshot}:
+The first task, \emph{Append Monthly Customer Snapshot}, determines the previous month-end and calculates historical RFM values for the \textbf{FactCustomerSnapshot}:
 \begin{lstlisting}[caption={Monthly RFM Calculation}, label={lst:month_RFM}]
-DECLARE @BatchID UNIQUEIDENTIFIER = CONVERT(UNIQUEIDENTIFIER, ?);
 DECLARE @SnapshotDate DATE;
 
 SET @SnapshotDate = EOMONTH(GETDATE(), -1);
@@ -151,10 +152,19 @@ EXEC dbo.usp_AppendMonthlyRFMSnapshot
     @SnapshotDate = @SnapshotDate;
 \end{lstlisting}
 
-Next, the second block Cluster Snapshot will determine the cluster segment:
+The subsequent \emph{Cluster Snapshot} task assigns segment labels using the available effective-dated model definitions:
 \begin{lstlisting}[caption={Monthly Cluster Segment}, label={lst:month_cluster}]
 EXEC dbo.usp_ClusterCustomerRFMSnapshot;
 \end{lstlisting}
 
 
 
+
+
+\section{Annual Model Training and Scheduling}
+The training scripts use the final snapshot of a year as their input. The first model was established by \texttt{bootstrap.py} using the 2011 year-end data, with historical 2011 snapshots labeled retrospectively. The next training runs were executed for 2012 and 2013; each saved model version has five cluster rows and a validity start date in \texttt{DimModelConfig}. The active live scorer uses the most recently active model, while the historical snapshot procedure selects effective-dated model configurations and includes bootstrap handling for the earliest periods.
+
+The project includes the Airflow DAG \texttt{rfm\_year\_end\_training}, which specifies a yearly run on 1 January. At the time of submission, the DAG's unattended end-to-end execution had not been verified. In particular, its configured start time (00:00) precedes the monthly SSIS snapshot schedule (00:05); a production-ready dependency would require waiting for the December snapshot to be committed before training begins. The DAG also needs an environment-independent Python module path on the deployment machine. These do not prevent the separately executed annual training workflow from being demonstrated, but remain operational integration tasks.
+
+\section{Pipeline Outputs}
+Successful runs produce one current Type 1 customer profile per customer, effective-dated Type 2 demographic records, a purchase-triggered RFM record for affected customers, periodic monthly customer snapshots, and a persisted set of cluster parameters. The Power BI dashboard reads the warehouse's historical June 2014 analytical view. This separation allows both immediate post-purchase decisions and longer-term segment comparisons without requiring an update of every live customer after each purchase.

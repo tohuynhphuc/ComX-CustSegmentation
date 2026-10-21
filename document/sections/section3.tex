@@ -1,47 +1,44 @@
-\chapter{Datawarehose Design}
+\chapter{Data Warehouse Design}
+\label{chap:warehouse}
 
-We propose our data warehouse design as below:
+The proposed warehouse follows a \textbf{fact constellation (galaxy) schema}: two customer-centred fact tables share dimensions for customer profiles, historical demographic versions, model configuration, and calendar dates. The diagram in Figure~\ref{fig:DWH_design} is the team's final warehouse design. A separate general-purpose sales fact is intentionally excluded because the project's analytical grain is the \emph{customer}, not the sales line. The RFM procedures read the required transactions from the source \texttt{CompanyX} database.
 
 \begin{figure}[p]
-    \centering % Căn giữa hình ảnh
-    \includegraphics[width=\textwidth]{DWHdesign.png}
-    \caption{Data Warehouse Design.}
-    \label{fig:DWH_design} % Nhãn để dùng cho lệnh tham chiếu \ref{}
+  \centering
+  \includegraphics[width=\textwidth,height=0.77\textheight,keepaspectratio]{DWHdesign.png}
+  \caption{Final CompanyX customer-oriented fact constellation.}
+  \label{fig:DWH_design}
 \end{figure}
-
-At a first glance, we can observe that the blueprint follows a Galaxy Schema (Fact Constellation) which consists of two fact tables, namely \textbf{FactCustomerSnapshot}, \textbf{FactCustomerRFMLive}; four dimensions including DimModelConfig, DimClusterProfiling, DimDate, DimCustomerProfiling; and an additional \verb|CustomerProfile| staging table for incremental loading process (using T-SQL Merge). We discuss in details about these elements later in this chapter.
 
 \section{Staging Layer}
 \label{subsec:stg_tab}
+The customer staging table uses a composite primary key combining the batch ID and customer key. It receives the demographic records selected by SSIS before they are merged into the two profile dimensions. A new batch identifier distinguishes the records associated with a particular ETL run. The active package clears the staging table at the beginning of a run and passes the batch identifier to \texttt{usp\_ApplyCustomerProfileBatch}.
 
-The table's primary key is the combination of \textbf{BatchID} and \textbf{CustomerKey\_Str}. Conceptually, this relational table acts as a Message Queue, which stores and prepares the demographics data of customers before updating or inserting necessary entries into DimClusterProfiling and DimCustomerProfiling. Moreover, with the help of batching, this table enhances the fault tolerance property of our system. For example, we can monitor the status of a specific batch with ease and rerun it in case that our ETL process encounters problems like crashes and power outage.
+This is a \emph{relational staging area}, not a durable message queue or an archive of every ETL batch. Its batch identifier makes processing scoped and repeatable; transactional error handling in the merge procedure protects the consistency of the dimension changes. Keeping a long-term execution log or recovering an interrupted run from retained staging records would require additional mechanisms.
 
-\section{Dimension Layer \& Slowly Changing Dimension Strategy}
-
+\section{Dimension Layer and Slowly Changing Dimensions}
 \subsection{DimCustomerProfiling}
-
-We designed this dimension so that it stores customers' personal information that does not change(SCD type 0), rarely change or their historical records are not worth being put into storage (SCD type 1). These are: birth date, gender, marital status, total number of Children, Home Owner status, and total number of cars owned by that customer. And since one distinct customer corresponds to one row, we converted CustomerId from CompanyX.Sales.Customer to string and reuses it as the Primary key of this dimension.
+This dimension stores one current demographic row per customer. The source \texttt{CustomerID} field in \texttt{Sales.Customer} is converted to an \texttt{NVARCHAR(20)} value, \texttt{CustomerKey\_Str}, which is reused as the primary key and in the related fact tables. Birth date is handled as an \textbf{SCD Type 0} attribute: once populated, the original value is retained. Gender, marital status, number of children, home ownership, and number of cars are handled as \textbf{SCD Type 1} attributes: detected changes overwrite the current value instead of preserving previous versions. This design retains straightforward access to current customer information without unnecessarily multiplying records.
 
 \subsection{DimClusterProfiling}
+\texttt{DimClusterProfiling} stores socioeconomic and geographical characteristics including yearly income, education, occupation, country, and region. These are managed as \textbf{SCD Type 2} attributes. A changed profile closes the preceding version and inserts a new row with a distinct \texttt{ClusterProfilingSK}, effective dates, and an \texttt{IsCurrent} flag. This allows analysts to inspect demographic versions captured by the warehouse and associate customer RFM observations with the available historical profiles.
 
-Regarding this table, socioeconomic and geographical details are stored in order to complement with DimCustomerProfiling to provide analysts with a comprehensive view of customers. These details include YearlyIncome, Education, Occupation, CountryName, RegionGroup. What's more, DimClusterProfiling is designed with SCD type 2, allowing analysts to correlate whether a customer's migration to a higher-value RFM segment was preceded by change in these attributes.  
+An important distinction is that this dimension's name refers to \emph{customer profiling}, not the five K-Means segment definitions. It also cannot recover demographic history from before the first successful warehouse load; retrospective sales snapshots should not be interpreted as proof of what those demographic fields were in earlier years.
 
 \subsection{DimModelConfig}
-
-This is created in order to track the metrics derived from our training models. These numbers will be then used to calculate the customer segment on-the-fly once one customer makes a transaction and monthly when we append our \textbf{FactCustomerSnapshot} with new rows. This will be discussed further in the next chapter. Besides that, we decided to implemenet SCD type 2 tracking for this dimension to perserve historical truth and guarantee auditability of past decisions.
+\texttt{DimModelConfig} persists the output of K-Means training. Each model version contains five rows, one for each cluster, with its numeric cluster ID, assigned business segment name, per-feature scaling means and standard deviations, and centroid coordinates in standardized feature space. \texttt{StartDate}, \texttt{EndDate}, and \texttt{IsActive} distinguish model versions over time. This resembles Type 2 effective-dated version management, but it represents \emph{retrained models}, not changing customer demographics. Persisting the parameters lets the Python live scorer reuse a trained model without refitting K-Means for every customer.
 
 \subsection{DimDate}
-
-Each row in this table corresponds to a specific date. We planned to make this dimension static, so the date range starts from the start of the CompanyX database and ends with our current date in 2026 plus 20 years more. This ensures that if the database continues to operate, DimDate does not need to be modified in the next 20 years.
+Each row of \texttt{DimDate} corresponds to a calendar date and exposes fields such as year, quarter, day, and month. The schema initialization script fills missing dates from \textbf{1 January 2010} through the date of execution plus twenty calendar years. The range covers the source sales period and the intended future reporting horizon; rerunning the script may extend it as needed.
 
 \section{Fact Layer}
-
 \subsection{FactCustomerSnapshot}
+\texttt{FactCustomerSnapshot} is a \textbf{monthly periodic snapshot fact}. Its analytical grain is \emph{one eligible customer at one month-end date}, uniquely identified by customer and \texttt{SnapshotDateKey}. The snapshot procedure reconstructs RFM from sales transactions as of that date. \texttt{Frequency365d} counts distinct purchases and \texttt{Monetary365d} sums sales order-line values within the trailing 365 days. \texttt{RecencyDays} measures the number of days since the latest purchase and can exceed 365 days. The fact also stores model references, a segment label, scaled features, and the associated customer profile key where available.
 
-This is a periodic snapshot fact table, which means that it will be appended with new rows in a defined schedule. In our design, FactCustomerSnapshot will be updated monthly (at the end of each month). The number of appended rows are equal to that of FactCustomerRFMLive at that specific point of time. Regarding the RFM scores(RecencyDays, Frequency365d, Monetary365d), as their names suggest, those metrics are calculated within the 365-day window. 
-Using this window is necessary to avoid sensonality bias and match the real world inter-purchase interval.
+Snapshots are calculated independently from the transaction-triggered live table; therefore, their row counts do \emph{not} necessarily match the live table. The monthly process is scheduled at 00:05 on the first day of the following month and uses the preceding calendar month-end as the snapshot date. This separates the historical \emph{as-of-date} view from purchase-event scoring and makes it possible to observe inactivity even when a customer places no new order.
 
 \subsection{FactCustomerRFMLive}
 \label{subsec:factcustomerRFMlive}
+\texttt{FactCustomerRFMLive} maintains one record per customer rather than one record per order. When relevant sales changes are detected, the system recalculates the affected customer's orders and inserts or updates that record. The analysis date is intentionally set to the \emph{customer's latest purchase date}; consequently, the purchase-time \texttt{RecencyDays} is zero. Frequency and monetary value summarize the 365 days ending on that purchase date. Python then assigns a segment using the latest active configuration in \texttt{DimModelConfig}.
 
-This fact table will update everytime a customer makes a transaction. However, it is different from a traditional transaction table in the sense that instead of only inserting, this table will act differently depending the customer. If he/she is the first time purchasing items, it will append the record. Otherwise, his/her old row will get overwritten by RFM values and customer segmetn derived from the new transaction. By having two fact tables as presented, we achieve separation of concerns by storing the historical records in one table and keeping up with the new real-time updates in another. This is critical when we need to compare customer segmentation over years or months and at the same time manage to take actions based on the up-to-date transactional/reporting performance.
+This is a \textbf{purchase-triggered operational view}, not a table that continuously ages every inactive customer. Refreshing all customers after every transaction would be unnecessarily expensive for the team's intended near-real-time workflow. Month-end snapshots supply the complementary time-based view used for inactivity trends and historical comparison. Throughout the report, the word \emph{live} refers to this operational purchase-time state; it should not be confused with the dashboard's final historical snapshot dated 30 June 2014.

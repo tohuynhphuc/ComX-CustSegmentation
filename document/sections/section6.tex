@@ -9,7 +9,7 @@
 \label{subsec:bi_business_context}
 After completing the data warehouse and running the K-Means clustering model, our team needed an interactive tool to show the results to decision-makers. In the database, customer data and cluster numbers are stored in tables, which are difficult for managers to read and understand quickly. Therefore, we built a Business Intelligence (BI) dashboard using Microsoft Power BI.
 
-The dashboard connects directly to the dimensional data warehouse and focuses on three main goals:
+The dashboard uses the current warehouse, but its \emph{live analytical view for reporting} is the \texttt{FactCustomerSnapshot} slice at \texttt{SnapshotDateKey = 20140630}, rather than the physical \texttt{FactCustomerRFMLive} table. This matters because the latter deliberately contains purchase-time recency of zero for refreshed customers, while a common month-end date is needed to compare inactivity. At this stage, the dashboard is integrated but Page 1 remains subject to final team refinement. The three pages focus on:
 \begin{enumerate}
     \item \textbf{Executive Overview:} Help company directors monitor total sales, customer numbers, yearly trends, and early warnings about customer churn.
     \item \textbf{Customer Demographics:} Help marketing and sales teams understand customer profiles, such as location, income level, age group, gender, and job types.
@@ -43,8 +43,6 @@ The report is organized into 3 main pages:
     \item \textbf{Page 3: Customer RFM Segmentation \& Behavior} (Detailed cluster metrics and strategic matrix).
 \end{enumerate}
 
----
-
 \section{Page 1: Executive Customer \& Segmentation Overview}
 \label{sec:bi_page1}
 Page 1 is designed for high-level managers who need a quick summary of the company's customer base, revenue, and retention status.
@@ -60,14 +58,14 @@ Page 1 is designed for high-level managers who need a quick summary of the compa
 \label{subsec:bi_page1_kpis}
 At the top of Page 1, we place four key metrics:
 \begin{enumerate}
-    \item \textbf{Total Customer Spend (\$15.62M):} Total lifetime sales from all individual retail customers (\$15,615,354.05).
-    \item \textbf{Total Customers (18,485):} Total number of unique customers in our database.
-    \item \textbf{Inactive Customers ($> 100$ Days) (12,895):} The number of customers who have not made any purchases in the last 100 days. This makes up \textbf{69.76\%} of all customers. In the bicycle retail industry, bikes are durable goods, so people do not purchase every month. However, after 100 days (more than 3 months), if a buyer does not come back for small accessories or maintenance, they are at risk of leaving. Therefore, this KPI serves as an early-warning signal.
+    \item \textbf{Total Customer Spend (\$15.62M):} Sum of the 365-day customer monetary values in the dashboard reference snapshot (\$15,615,354.05), rather than verified lifetime revenue.
+    \item \textbf{Total Customers (18,485):} Distinct customers in the imported 30 June 2014 reporting view; this is not a claim about all possible customers in the source database.
+    \item \textbf{Inactive Customers ($> 100$ Days) (12,895):} Customers whose snapshot recency exceeds 100 days as of 30 June 2014. This makes up \textbf{69.76\%} of all customers. In the bicycle retail industry, bikes are durable goods, so people do not purchase every month. However, after 100 days (more than 3 months), if a buyer does not come back for small accessories or maintenance, they are at risk of leaving. Therefore, this KPI serves as an early-warning signal.
     \item \textbf{Repeat Customer Rate (14.96\%):} Calculated as the percentage of customers who have ordered at least two times:
     \begin{equation}
         \mathrm{Repeat\ Customer\ Rate} = \frac{\sum [ \mathrm{Customers\ with\ Frequency} \ge 2 ]}{\mathrm{Total\ Customers}} = \frac{2{,}765}{18{,}485} = 14.96\%
     \end{equation}
-    This shows a serious business issue: \textbf{85.04\% of customers only bought once and never returned}.
+    This indicates that 85.04\% do not have at least two orders \emph{within the trailing 365-day measurement window}. It does not establish that these customers purchased only once over their entire history.
 \end{enumerate}
 
 \subsection{Visual Charts and Key Findings}
@@ -82,38 +80,36 @@ We selected a 100\% Stacked Column Chart to show the proportion of each customer
 \end{itemize}
 These figures illustrate an important strategic shift: while CompanyX was originally a niche retailer of premium bicycles dominated by high-value buyers in 2011--2012, it successfully expanded to general everyday shoppers in 2013--2014. Nevertheless, this expansion brought a large volume of one-time or low-spending buyers.
 
-\subsubsection{2. Monthly Customer Spend Trend (2011--2014)}
-We used an Area Chart on a continuous date timeline from July 2011 to June 2014 to track overall revenue progression:
+\subsubsection{2. Rolling Customer Spend at Monthly Snapshots (2011--2014)}
+The Area Chart follows the sum of trailing-365-day customer monetary values at successive monthly snapshot dates (July 2011 to June 2014). It shows a \emph{rolling annual spending measure sampled monthly}, not independent sales revenue earned within each calendar month:
 \begin{itemize}
-    \item \textbf{Early Stage (2011--Mid 2012):} Monthly sales started at a moderate level, which was typical for a new business with a limited product catalog.
-    \item \textbf{Rapid Acceleration (Mid 2012--End 2013):} Starting in the second half of 2012, sales increased significantly. The chart shows strong upward momentum throughout 2013, reaching the highest sales volume towards the end of 2013.
-    \item \textbf{Seasonality Trends:} The area chart displays seasonal fluctuations, with higher sales during late spring and summer (peak outdoor cycling season) as well as year-end holiday shopping periods.
+    \item \textbf{Early Stage (2011--Mid 2012):} The rolling spend measure started at a moderate level, which was typical for a new business with a limited product catalog.
+    \item \textbf{Rapid Acceleration (Mid 2012--End 2013):} Starting in the second half of 2012, rolling customer monetary totals increased significantly. The chart shows strong upward momentum throughout 2013, reaching a high rolling monetary value towards the end of 2013.
+    \item \textbf{Seasonality Trends:} Changes in the rolling total may reflect both newly included purchases and older purchases leaving the 365-day window. A claim about monthly seasonality would require a separate measure of sales booked within each individual month.
 \end{itemize}
 
 \subsubsection{3. Customer Spend \& Volume by Segment}
 This Dual-Axis Combo Chart displays total sales as bars on the left axis and customer counts as points on the right axis:
 \begin{itemize}
-    \item \textbf{Validation of the Pareto Principle (80/20 Rule):}
+    \item \textbf{Spending Concentration (rather than a strict 80/20 split):}
     \begin{itemize}
         \item The \textit{High-Value / Cooling Off} cluster generates \textbf{\$11.2M} (71.53\% of total revenue) from 7,357 customers (39.80\% of the customer base).
         \item The \textit{Champions} cluster contributes \textbf{\$4.0M} (25.81\% of total revenue) from 2,377 customers (12.86\%).
-        \item Together, these two premium segments contribute \textbf{97.34\%} of CompanyX's total lifetime sales (\$15.2M out of \$15.62M), while making up only \textbf{52.66\%} of all customers (9,734 people).
+        \item Together, these two premium segments contribute \textbf{97.34\%} of the snapshot's rolling-365-day monetary total (\$15.2M out of \$15.62M), while making up only \textbf{52.66\%} of all customers (9,734 people).
     \end{itemize}
     \item \textbf{The Low-Monetary Contrast:}
     In comparison, the \textit{Low-Spend / Occasional} group contains 7,175 customers (38.82\% of the total base) but brings in only \textbf{\$0.35M} (2.25\% of revenue). Similarly, \textit{Recent / Promising} accounts for \textbf{\$0.07M} (0.42\%), and \textit{Lost / Dormant} accounts for \textbf{\$0.00}.
     \item \textbf{Key Takeaway:}
-    This clearly demonstrates that retaining high-value customers is far more essential for business survival than simply acquiring many low-spend shoppers.
+    These figures motivate prioritizing high-value retention campaigns; whether a campaign is more profitable than acquisition must be assessed separately using cost and response data.
 \end{itemize}
 
 \subsection{Dashboard Interactivity and Slicer Architecture}
 \label{subsec:bi_page1_slicer_design}
 In our Power BI solution, an interactive dropdown slicer (\textit{Filter by Segment}) is placed in the top-right corner of each dashboard page. However, during the dashboard development, an important architectural decision was required for Page 1:
 \begin{itemize}
-    \item \textbf{The Macro Trend Conflict:} The two longitudinal visuals---\textit{Customer Segment Mix by Year} and \textit{Monthly Customer Spend Trend}---rely on historical snapshot data from the periodic snapshot table (\texttt{FactCustomerSnapshot}) to show the whole company's evolution. In particular, the 100\% stacked column chart displays the structural proportions among all five segments. If a single segment is filtered, the multi-segment composition collapses to 100\%, eliminating its analytical purpose.
+    \item \textbf{The Macro Trend Conflict:} The two longitudinal visuals---\textit{Customer Segment Mix by Year} and \textit{Rolling Customer Spend Trend}---rely on historical snapshot data from the periodic snapshot table (\texttt{FactCustomerSnapshot}) to show the whole company's evolution. In particular, the 100\% stacked column chart displays the structural proportions among all five segments. If a single segment is filtered, the multi-segment composition collapses to 100\%, eliminating its analytical purpose.
     \item \textbf{Implementation of Edit Interactions:} Following standard Business Intelligence best practices, we accessed the \textit{Format $\rightarrow$ Edit Interactions} menu in Power BI and set the interaction from the segment slicer to \textbf{None} for these two macro trend visuals. As a result, users can filter the top KPI cards and the segment combo chart without breaking the overall company baseline timeline.
 \end{itemize}
-
----
 
 \section{Page 2: Customer Demographics \& Persona Profiling}
 \label{sec:bi_page2}
@@ -135,7 +131,7 @@ The four cards on the left show customer averages:
     \item \textbf{Average Spend per Customer:} \textbf{\$844.76}.
     \item \textbf{Average Order Value (AOV):} \textbf{\$720.53}.
 \end{itemize}
-Because Average Spend (\$844.76) is very close to Average Order Value (\$720.53), it confirms again that most people only place one single order in their lifetime.
+These measures describe the same trailing 365-day period, and their ratio is consistent with comparatively low order frequency. They do not by themselves establish customers' lifetime order counts.
 
 \subsection{Demographic Analysis (Overall Base)}
 \label{subsec:bi_page2_insights}
@@ -159,14 +155,14 @@ The map shows that our customers live in developed markets with strong cycling c
 \begin{itemize}
     \item \textbf{Male:} 9,352 customers (50.59\%).
     \item \textbf{Female:} 9,133 customers (49.41\%).
-    \item The gender ratio is almost 50/50, which proves that cycling products are popular with both men and women equally.
+    \item The gender ratio is almost 50/50, suggesting a balanced gender composition in the analyzed customer population.
 \end{itemize}
 
 \subsubsection{5. Customers by Age Group (Column Histogram)}
 \begin{itemize}
     \item Customers are grouped into age brackets: $<30$, $30-40$, $41-50$, $51-60$, and $60+$.
     \item The majority of customers are in middle age: \textbf{41--50 years old} (6,200 people, 33.5\%) and \textbf{51--60 years old} (5,200 people, 28.1\%).
-    \item People under 30 make up a very small portion, meaning that young adults rarely buy expensive bicycles from CompanyX.
+    \item People under 30 make up a very small portion, within the age distribution captured by the dashboard; product-price preferences cannot be inferred from age alone.
 \end{itemize}
 
 \subsection{Segment-Specific Demographic Personas (Slicer Drill-Down)}
@@ -198,13 +194,13 @@ Filtering each segment on Page 2 highlights significant differences in purchasin
     \begin{itemize}
         \item \textit{Highest Earning Power:} Champions have the highest income level among all clusters. Buyers earning more than \$100,000 account for \textbf{14.01\%} (333 individuals), while 30.88\% earn \$50,000--\$75,000.
         \item \textit{White-Collar Roles:} \textit{Professional} (39.17\%, 931 people) and \textit{Management} (18.93\%, 450 people) represent \textbf{58.10\%} of this group, demonstrating that corporate earners drive repeat purchases.
-        \item \textit{Distinct Repeat Behavior:} This is the only segment where Average Spend per Customer (\$1,700) is much higher than Average Order Value (\$665.99). This confirms that Champions make multiple repeat transactions ($F \approx 2.55$), buying replacement parts and upgrades.
+        \item \textit{Distinct Repeat Behavior:} This is the only segment where Average Spend per Customer (\$1,700) is much higher than Average Order Value (\$665.99). This supports the conclusion that Champions place repeat orders ($F \approx 2.55$). Product-specific upgrades or replacements would need an order-category analysis.
         \item \textit{Age Concentration:} Heavily centered in the \textbf{41--50} age bracket (\textbf{38.33\%}, 911 buyers), followed by 51--60 (27.93\%). These are established professionals investing in active health and cycling hobbies.
     \end{itemize}
 
     \item \textbf{2. High-Value / Cooling Off (Single-Purchase Premium Buyers):}
     \begin{itemize}
-        \item \textit{Spend Equals AOV:} Average Spend per Customer exactly equals Average Order Value at \textbf{\$1,518.20}. This proves that these 7,357 customers purchased one high-end bicycle and have not yet returned.
+        \item \textit{Spend Equals AOV:} Average Spend per Customer exactly equals Average Order Value at \textbf{\$1,518.20}. This is consistent with approximately one purchase in the measured 365-day window; the RFM totals alone cannot establish the precise product purchased or lifetime ordering behaviour.
         \item \textit{Solid Middle Class:} The largest income groups are \$50,001--\$75,000 (32.17\%) and \$25,001--\$50,000 (31.58\%), representing \textbf{63.75\%} of the cluster.
         \item \textit{Age Group:} The dominant bracket is 41--50 years old (39.42\%, 2.9K buyers), followed by 51--60 (28.55\%, 2.1K buyers).
     \end{itemize}
@@ -221,18 +217,16 @@ Filtering each segment on Page 2 highlights significant differences in purchasin
         \item \textit{Lower-Income Skew:} This group contains the highest percentage of lower-income shoppers: buyers earning below \$25,000 account for \textbf{20.60\%} (1,478 individuals).
         \item \textit{Job Breakdown:} \textit{Manual} workers represent 16.7\% (1.2K people, tied with Management), which is the highest manual laborer proportion among all active clusters.
         \item \textit{Age Profile:} Like the Recent segment, this cluster has a heavy concentration of seniors aged \textbf{60+} (\textbf{29.3\%}, 2.1K buyers), alongside a noticeable group of younger adults aged 30--40 (18.1\%).
-        \item \textit{Basket Size:} The AOV is very small at \textbf{\$47.33}, confirming that these customers only buy minor accessories such as inner tubes, water bottles, and helmets.
+        \item \textit{Basket Size:} The AOV is very small at \textbf{\$47.33}, suggesting low-spend purchases. Specific accessory categories should be verified using sales lines and product attributes.
     \end{itemize}
 
     \item \textbf{5. Lost / Dormant (Disengaged Lower-Income Manual Workers):}
     \begin{itemize}
         \item \textit{Occupation Disparity:} \textit{Skilled Manual} workers heavily dominate at \textbf{37.79\%} (339 buyers), while \textit{Management} drops to its lowest proportion at \textbf{8.70\%}.
         \item \textit{Compressed Earnings:} Over \textbf{80.49\%} of customers earn between \$25,000 and \$75,000, with only 4.24\% earning above \$100,000.
-        \item \textit{Complete Inactivity:} With \$0.00 in spend and over 600 days without an order, these contacts have churned from the brand.
+        \item \textit{Complete Inactivity:} With \$0.00 in spend and over 600 days without an order, these customers are dormant in the measurement period; permanent churn cannot be proven from a fixed historical snapshot.
     \end{itemize}
 \end{enumerate}
-
----
 
 \section{Page 3: Customer RFM Segmentation \& Behavioral Matrix}
 \label{sec:bi_page3}
@@ -247,7 +241,7 @@ Page 3 explains the 5 customer clusters from our K-Means model using the RFM fra
 
 \subsection{Company-Wide Benchmark Metrics}
 \label{subsec:bi_page3_benchmarks}
-The top ribbon gives the overall company averages:
+The top ribbon gives the averages for the 30 June 2014 reporting snapshot:
 \begin{itemize}
     \item \textbf{Average Recency:} \textbf{189.32 Days} (around 6.3 months since the last order).
     \item \textbf{Average Frequency:} \textbf{1.17 Orders} per customer.
@@ -256,7 +250,7 @@ The top ribbon gives the overall company averages:
 
 \subsection{Cluster Performance Table}
 \label{subsec:bi_page3_matrix}
-Table~\ref{tab:rfm_matrix} shows the exact statistics for each of the 5 segments:
+Table~\ref{tab:rfm_matrix} reproduces the five segment statistics reported by the current dashboard export (subject to final refresh and reconciliation):
 
 \begin{table}[htbp]
 \centering
@@ -264,6 +258,7 @@ Table~\ref{tab:rfm_matrix} shows the exact statistics for each of the 5 segments
 \label{tab:rfm_matrix}
 \small
 \setlength{\tabcolsep}{4.5pt}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{|l|r|r|r|r|r|}
 \hline
 \textbf{Cluster Segment} & \textbf{Customers} & \textbf{Total Spend (\$)} & \textbf{Avg R (Days)} & \textbf{Avg F} & \textbf{Avg M (\$)} \\ \hline
@@ -273,7 +268,8 @@ Table~\ref{tab:rfm_matrix} shows the exact statistics for each of the 5 segments
 4. Low-Spend / Occasional & 7,175 (38.82\%) & \$350,919.88 & 196.01 & 1.03 & \$48.91 \\ \hline
 5. Lost / Dormant & 897 (4.85\%) & \$0.00 & 602.92 & 0.00 & \$0.00 \\ \hline
 \textbf{Company Total / Average} & \textbf{18,485} & \textbf{\$15,615,354.05} & \textbf{189.32} & \textbf{1.17} & \textbf{\$844.76} \\ \hline
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 \subsection{Customer Volume Distribution (Donut Chart)}
@@ -300,68 +296,26 @@ The bubble chart at the bottom-right plots all 5 clusters:
 
 \subsubsection{Quadrant Analysis}
 \begin{enumerate}
-    \item \textbf{Top-Left (High Spend, Low Recency) --- Champions:}
+    \item \textbf{High spend, below-average recency --- Champions:}
     These customers bought recently ($R=110.17$ days) and spend the most ($M=\$1,695.37$). They are our best VIP customers.
-    \item \textbf{Top-Center (High Spend, Moderate Recency) --- High-Value / Cooling Off:}
+    \item \textbf{High spend, moderately recent --- High-Value / Cooling Off:}
     These customers spent a lot ($M=\$1,518.20$), but their Recency is 174.19 days, which is close to the 189-day average. They are starting to cool down and need immediate attention before they leave.
-    \item \textbf{Bottom-Left (Low Spend, Very Recent) --- Recent / Promising:}
+    \item \textbf{Low spend, very recent --- Recent / Promising:}
     These are new customers who bought recently ($R=13.28$ days). Their spend is still small (\$95.99), but they have great potential to grow into Champions.
-    \item \textbf{Bottom-Right (Low Spend, High Recency) --- Low-Spend \& Lost:}
+    \item \textbf{Low spend, long recency --- Low-Spend and Lost:}
     These customers have not bought for a long time and spend very little. The Lost group has not returned for over 600 days.
 \end{enumerate}
 
----
-
-\section{Actionable Business Recommendations}
-\label{sec:bi_recommendations}
-Based on the dashboard insights, we recommend the following practical strategies for CompanyX:
-
-\subsection{1. Champions: VIP Loyalty Program}
-\label{subsec:rec_champions}
-\begin{itemize}
-    \item \textbf{Goal:} Keep our best customers happy and encourage them to recommend the brand to others.
-    \item \textbf{Action:} Create a VIP club that gives early access to new bicycle models, invitations to special cycling events, and referral discounts when they introduce friends.
-\end{itemize}
-
-\subsection{2. High-Value / Cooling Off: Urgent Retention Campaigns}
-\label{subsec:rec_high_value}
-\begin{itemize}
-    \item \textbf{Goal:} Protect the most important revenue source (over 71\% of total sales).
-    \item \textbf{Action:} Set up an automated email at day 120 after their purchase offering a free annual bicycle check-up at local partner shops, or a \$150 discount voucher if they upgrade components within 30 days.
-\end{itemize}
-
-\subsection{3. Recent / Promising: Cross-Selling and Welcome Series}
-\label{subsec:rec_recent}
-\begin{itemize}
-    \item \textbf{Goal:} Encourage new buyers to make a second purchase quickly.
-    \item \textbf{Action:} Send a 30-day email series: Day 3 with bike assembly and safety tips, Day 14 with cleaning advice, and Day 21 offering a 15\% discount on essential accessories like helmets, gloves, and lights.
-\end{itemize}
-
-\subsection{4. Low-Spend / Occasional: Low-Cost Automated Marketing}
-\label{subsec:rec_low_spend}
-\begin{itemize}
-    \item \textbf{Goal:} Increase purchase frequency without spending too much marketing budget.
-    \item \textbf{Action:} Avoid expensive phone calls or printed mail. Instead, send automated emails and seasonal clearance announcements for cheap consumables like water bottles and spare tubes.
-\end{itemize}
-
-\subsection{5. Lost / Dormant: Cost Reduction}
-\label{subsec:rec_lost}
-\begin{itemize}
-    \item \textbf{Goal:} Stop wasting advertising money on inactive contacts ($R > 600$ days).
-    \item \textbf{Action:} Remove this group from paid Facebook and Google ads. Only send them one or two broad holiday sale emails per year (e.g., Black Friday or New Year).
-\end{itemize}
-
----
-
 \section{Summary of Core DAX Measures}
 \label{sec:bi_dax_summary}
-Table~\ref{tab:dax_summary} summarizes the main DAX formulas created in Power BI for this project:
+Table~\ref{tab:dax_summary} records the main measure \emph{logic} described by the team. Names shown here are conceptual; the reporting model derives its table labelled \texttt{FactCustomerRFMLive} from the June 2014 snapshot, rather than from the SQL table of the same name. The final Power BI field expressions should be checked during dashboard handover:
 
 \begin{table}[htbp]
 \centering
-\caption{Summary of Core DAX Measures.}
+\caption{Dashboard measure definitions (conceptual DAX logic).}
 \label{tab:dax_summary}
 \small
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{|l|l|p{7.5cm}|}
 \hline
 \textbf{Measure Name} & \textbf{Home Table} & \textbf{DAX Formula / Logic} \\ \hline
@@ -371,6 +325,11 @@ Inactive Customers (>100d) & FactCustomerRFMLive & \texttt{CALCULATE([Total Cust
 Repeat Customer Rate & FactCustomerRFMLive & \texttt{VAR R = CALCULATE([Total Customers],} \newline \texttt{\phantom{XXXXXX}Frequency >= 2)} \newline \texttt{RETURN DIVIDE(R, [Total Customers], 0)} \\ \hline
 Average Order Value (AOV) & FactCustomerRFMLive & \texttt{DIVIDE([Total Customer Spend],} \newline \texttt{\phantom{XXXXXXX}SUM(Frequency), 0)} \\ \hline
 Avg Spend per Customer & FactCustomerRFMLive & \texttt{DIVIDE([Total Customer Spend],} \newline \texttt{\phantom{XXXXXXX}[Total Customers], 0)} \\ \hline
-Monthly Customer Spend & FactCustomerSnapshot & \texttt{SUM(MonetarySnapshot)} \\ \hline
-\end{tabular}
+Rolling 365-day Monetary Trend & FactCustomerSnapshot & \texttt{SUM(Monetary365d)} \\ \hline
+\end{tabular}%
+}
 \end{table}
+
+
+
+\noindent The business actions supported by these visualizations are discussed in Chapter~\ref{chap:business_decisions}.

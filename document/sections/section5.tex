@@ -1,26 +1,13 @@
 
 % Chapter content only — insert with \input{customer_segmentation_chapter.tex}
-\chapter{RFM Analysis and K-Means Clustering}
+\chapter{RFM Analysis and K-Means Clustering}\label{chap:ml}
 
 \section{Motivation}
 
-After investigation in the CompanyX database from 2011 to 2014, it is easy to state a problem, which is the absence of
-identifying and categorizing customers. Without targeted marketing strategies to customers, it is difficult to retain
-customers, leading to the loss in profit and revenue.
+The CompanyX transactional database contains purchases from May 2011 through June 2014. However, raw sales records alone do not identify which customer groups require different business strategies. This chapter follows the team's implemented approach: summarize purchase behaviour using RFM, clean and transform the features, fit K-Means to customer snapshots, and translate the resulting numeric clusters into interpretable segment names. The trained configurations can then be reused by the operational scoring pipeline and historical snapshot process.
 
-To address the problem of unstructured customer data, this project implements the RFM method, which summarizes each
-customer's buying behaviour with three variables, and groups customers with K-Means Clustering. This analysis enables
-data-driven segmentation, facilitating strategies such as targeted marketing, retention campaigns, or loyalty
-programmes aligned with actual customer behaviour. The data comes from the sales records of CompanyX, covering from May
-2011 to December 2014.
-
-\subsection{RFM variables}
-
-Recency (R): the number of days since the customer's last purchase.
-
-Frequency (F): the total number of purchases the customer has made.
-
-Monetary (M): the total amount the customer has spent up to the snapshot date.
+\subsection{RFM Variables}
+Recency (R) is the number of days from an evaluation date to the customer's last purchase. Frequency (F) is the count of distinct sales orders within the trailing 365 days. Monetary (M) is the sum of order-line amounts within that same 365-day period. Recency may exceed 365 days for customers who have not purchased recently. The year-end training snapshots used by the project are 31 December 2011, 2012, and 2013; there is no 2014 trained model.
 
 \section{Data Cleaning}
 
@@ -61,7 +48,7 @@ This subset of data serves a representative overview of customer purchases based
     11607             & 71               & 1                  & 3953.99           \\
     \hline
   \end{tabular}
-  \caption{RFM analysis}
+  \caption{Example RFM records before preprocessing.}\label{tab:rfm_sample}
 \end{table}
 
 \section{Log transformation}
@@ -106,7 +93,7 @@ leads to log(0) undefined.
     11607             & 4.277            & 0.693              & 8.283             \\
     \hline
   \end{tabular}
-  \caption{Logged Data}
+  \caption{Log-transformed sample RFM values.}
 \end{table}
 
 \section{Standardization}
@@ -151,19 +138,17 @@ data and stored, so that new customers are scaled in the same way.
     11607             & 0.747            & 0.000              & 1.454             \\
     \hline
   \end{tabular}
-  \caption{Standardized Data}
+  \caption{Standardized sample RFM values.}
 \end{table}
 
 \section{K-Means Clustering}
 
-K-Means is an unsupervised machine learning algorithm used to partition data into a dataset into K distinct,
-non-overlapping clusters. The purpose of this part is to find the most optimal K, meaning that the optimal number of
-groups categorizing customers.
+K-Means is an unsupervised algorithm that partitions observations into \(K\) clusters by iteratively assigning each point to the nearest centroid and updating centroid locations. The project fits scikit-learn \texttt{KMeans} with \(K=5\), \texttt{k-means++} initialization, \texttt{n\_init=10}, \texttt{max\_iter=300}, and \texttt{random\_state=42}.
 
 For each data point in the dataset, calculate the Euclidean distance between the point and each centroid. Assign the
 data point to the cluster with the closest centroid
 
-\[d(x, y) = \sqrt{\sum_{n} (y_i - x_i)^2}\]
+\[ d(\mathbf{x},\mathbf{c}) = \sqrt{\sum_{j=1}^{3} (x_j-c_j)^2}. \]
 
 Where:
 \begin{itemize}
@@ -174,10 +159,9 @@ Where:
   \item $n$ : indicates the total number of the attribute for each data point
 \end{itemize}
 
-The WCSS is calculated to measure the compactness of the clusters. For each cluster, compute the sum of squared
-distances between each data point and its cluster centroid(Kuraria et al., 2018),(Cui, 2020):
+Within-cluster sum of squares (WCSS), also called inertia, measures the total squared distance from observations to their assigned centroids:
 
-\[WCSS = \sum \sum \sum (x_{ij} - \bar{x}_{kj})^2\]
+\[ \mathrm{WCSS}=\sum_{k=1}^{K}\sum_{i\in S_k}\sum_{j=1}^{3}(x_{ij}-c_{kj})^2. \]
 
 Where:
 \begin{itemize}
@@ -196,26 +180,22 @@ criteria, which is Silhouette, also needs to be considered. The silhouette score
 cohesive clusters are in K-Means clustering. It evaluates each data point's fit relative to its own cluster versus
 neighboring clusters.
 
-\begin{center}
-  \fbox{\parbox{0.83\linewidth}{\centering Graph: Elbow Method to find optimal K}}
-\end{center}
+Figures~\ref{fig:elbow_2013} and~\ref{fig:silhouette_2013} reproduce the diagnostic plots already saved with the project for the 31 December 2013 snapshot. Inertia decreases as \(K\) increases, while the silhouette metric measures separation between clusters. The silhouette score for \(K=5\) is approximately 0.518; \(K=2\) achieves a higher score (approximately 0.636) on this snapshot. Therefore five clusters were chosen as a \emph{business-interpretability trade-off}, supported by the elbow/silhouette diagnostics and the desire for distinct actionable customer profiles, not because five globally maximizes the silhouette score.
 
-\begin{center}
-  \fbox{\parbox{0.83\linewidth}{\centering Graph: Silhouette Score based on different K}}
-\end{center}
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.94\textwidth]{elbow_20131231.png}
+  \caption{Elbow plot for the 31 December 2013 RFM snapshot (existing project diagnostic).}
+  \label{fig:elbow_2013}
+\end{figure}
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.94\textwidth]{silhouette_vs_k_20131231.png}
+  \caption{Silhouette comparison for different cluster counts on the same snapshot.}
+  \label{fig:silhouette_2013}
+\end{figure}
 
-Prior to clustering, the optimal number of clusters (k) is determined by the Elbow Method, which plots the
-Within-Cluster Sum of Squares (WCSS) against different values of k. The point at which the rate of decrease sharply
-(the elbow) is identified at k = 5, suggesting that five clusters offer a good balance.
-
-Then the standardized RFM data is then fit to the standardized RFM Model, resulting in cluster labels among customers.
-The results are visualized using 2D scatter plots of RFM components, colored by cluster.
-
-\begin{center}
-  \fbox{\parbox{0.83\linewidth}{\centering Graph: Customer Clusters}}
-\end{center}
-
-K Means only returns a number of each customer (0 to 4), which reflects no value of what the groups mean. Moreover,
+K-Means only returns a numeric cluster ID (0 to 4) for each customer, which reflects no value of what the groups mean. Moreover,
 annually the model is retrained and the number from 0 to 4 is different and not staying consistent. Therefore, to turn
 them into meaningful clusters automatically, a solution is implemented: Each cluster on an RFM variable is given
 ``points'', based on how its average compares with the other clusters. The rules are
@@ -225,7 +205,7 @@ values are, the more valuable they are)
 
 For Recency: the rule is reversed because shorter time since the last purchase is better.
 
-\noindent Formula:     Score = Monetary Points + Frequency Points + Recency Points x 1.1
+\noindent The implemented composite score is \(\text{Monetary rank}+\text{Frequency rank}+1.1\times\text{Recency rank}\).
 
 Recency is weighted slightly higher, because a recent purchase is a strong sign that a customer is still active. Points
 are given to clusters, not to individual customers.
@@ -251,7 +231,7 @@ The outcome will look like this:
   \endgroup
 \end{table}
 
-The total is 18,484 customers, which matches the number of rows in the last date of the database.
+The example model output was recorded for an 18,484-customer analysis extract. The final dashboard chapter reports 18,485 customers for its June 2014 view. This one-record difference has not been reconciled in the submitted materials, so the two counts should not be presented as an identical population without verification.
 
 Champions (cluster 4) has the highest frequency and spend, with an average of 2.55 purchases and 1,694 in total. Its
 average recency is 110 days, so these customers are valuable but have not bought recently.
@@ -277,9 +257,5 @@ also provides valuable insights for strategic business decision-making. Therefor
 and launch effective marketing strategies to each cluster of customers, not only to retain the occasional buyers, but
 also to come up with attractive promotions for recent customers.
 
-\section*{Reference:}
-
-Kuraria, A., Jharbade, N., \& Soni, M. (2018). Centroid Selection Process Using WCSS and Elbow Method for KMean
-Clustering Algorithm in Data Mining. International Journal of Scientific Research in Science, Engineering and
-Technology, 6(1), 190--195. \texttt{https://doi.org/10.32628/ijsrset21841122}
+The first historical model was initialized with \texttt{bootstrap.py} from the 2011 year-end snapshot, including retrospective labels for earlier months. Separate 2012 and 2013 models were then saved with \texttt{train\_model.py}. The most recent active model is used by the Python live scorer. These saved model versions support repeatable clustering without retraining on every purchase.
 
