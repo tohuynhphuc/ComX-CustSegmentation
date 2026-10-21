@@ -2,12 +2,21 @@
 \label{chap:introduction}
 
 \section{Project Context and Data Source}
-Customer purchasing behaviour is an important input to retail decisions, yet transaction tables alone do not readily show which customers buy repeatedly, which customers generate high value, or which customer groups require different marketing approaches. CompanyX is the retail dataset used in this project. Its transactional schema records customers, sales orders, order details, products, and associated customer demographics. The available sales history begins in May 2011 and ends in June 2014; the system treats 30 June 2014 as the final historical reporting date for the current Power BI dashboard.
+Customer purchasing behaviour is an important input to retail decisions, yet transaction tables alone do not readily
+show which customers buy repeatedly, which customers generate high value, or which customer groups require different
+marketing approaches. CompanyX is the retail dataset used in this project. Its transactional schema records customers,
+sales orders, order details, products, and associated customer demographics. The available sales history begins in May
+2011 and ends in June 2014.
 
-The project deliberately focuses on \emph{customer-centric analysis}, rather than general sales reporting. In particular, the team uses Recency, Frequency, and Monetary (RFM) behaviour to describe customers, K-Means to discover five interpretable groups, and a dimensional data warehouse to make these results available for analysis. The warehouse also stores slowly changing customer attributes and monthly historical observations. Its automated ETL pipeline makes the latest customer profiles and purchase-triggered segmentation results available at approximately one-minute intervals.
+The project deliberately focuses on \emph{customer-centric analysis}, rather than general sales reporting. In
+particular, the team uses Recency, Frequency, and Monetary (RFM) behaviour to describe customers, K-Means to discover
+five interpretable groups, and a dimensional data warehouse to make these results available for analysis. The warehouse
+also stores slowly changing customer attributes and monthly historical observations. Its automated ETL pipeline makes
+the latest customer profiles and purchase-triggered segmentation results available at one-minute intervals.
 
 \section{Business Problem}
-The practical question is not simply how much CompanyX sold, but \emph{which customers contributed that value and how their purchasing patterns changed}. Four issues motivated the solution:
+The practical question is not simply how much CompanyX sold, but \emph{which customers contributed that value and how
+  their purchasing patterns changed}. Four issues motivated the solution:
 \begin{itemize}
   \item \textbf{Repeat purchasing and retention.} Single-order buyers and customers who do not return represent different opportunities from loyal repeat customers. An appropriate intervention requires a view of their purchase frequency and time since their last order.
   \item \textbf{Uneven customer value.} Customers differ considerably in their spending. Treating all customers identically can hide high-value accounts and lead to inefficient campaign allocation.
@@ -15,20 +24,32 @@ The practical question is not simply how much CompanyX sold, but \emph{which cus
   \item \textbf{Fragmented historical and operational views.} A record updated when a purchase occurs answers a different question from a month-end view of the entire customer population. Both are needed to distinguish purchase-time behaviour from longer-term inactivity and segment migration.
 \end{itemize}
 
-The Power BI dashboard includes indicators such as repeat-customer rate, customer inactivity, average purchase frequency, and spend concentration. These are descriptive analytical results for the chosen snapshot date, rather than measurements of campaign effectiveness. The figures must be interpreted alongside their population and time-window definitions.
+The Power BI dashboard provides key indicators such as repeat-customer rate, customer inactivity, average purchase
+frequency, and spending patterns. Together, these metrics offer an overview of customer purchasing behavior and
+engagement, helping decision-makers identify potential retention issues, understand customer value, and develop
+appropriate marketing strategies.
 
 \section{Objectives and Deliverables}
-The project has two complementary objectives: \textbf{customer segmentation} and \textbf{an automated business intelligence pipeline}. To meet them, the system must:
+
+The primary objective of this project is to develop a customer segmentation and business intelligence system that helps
+CompanyX better understand customer purchasing behaviour and support data-driven decision-making. The project focuses
+on two main goals:
+
 \begin{enumerate}
-  \item build a customer-oriented dimensional warehouse with Type 0, Type 1, and Type 2 slowly changing dimension handling;
-  \item incrementally extract and merge customer demographic changes using SQL Server Integration Services (SSIS) and T-SQL;
-  \item update an individual customer's purchase-time RFM metrics and cluster after relevant sales changes, without unnecessarily recalculating every customer on each transaction;
-  \item record month-end RFM snapshots for historical behavioural analysis;
-  \item train and retain versioned K-Means cluster configurations and make the resulting segment labels usable downstream;
-  \item present customer profiles, segment trends, and business recommendations in an interactive Power BI report.
+  \item \textbf{Customer Segmentation:}
+        Analyse customer purchasing patterns to identify distinct customer
+        groups based on their behaviour and value. These insights can help
+        the company better understand its customer base and develop more
+        effective marketing, retention, and customer engagement strategies.
+
+  \item \textbf{Automated Business Intelligence Pipeline:}
+        Develop an integrated system that automatically collects, processes,
+        and analyses customer data. The system aims to provide up-to-date
+        customer information while maintaining historical records, allowing
+        businesses to monitor changes in customer behaviour over time.
 \end{enumerate}
 
-The submitted implementation comprises SQL Server warehouse definitions and routines, deployed SSIS packages, Python preprocessing and clustering scripts, an Airflow training DAG, and a Power BI dashboard. The customer and live RFM jobs are scheduled every minute; the month-end snapshot package runs at 00:05 on the first day of each month. Annual training has been specified in Airflow, but its unattended end-to-end execution has not yet been tested. Online deployment was considered a stretch goal and is outside the completed local deployment.
-
-\section{Report Organization}
-Chapter~\ref{chap:background} summarizes the concepts and comparable work relevant to the chosen approach. Chapter~\ref{chap:warehouse} describes the dimensional design, Chapter~\ref{chap:workflow} presents the operational ETL workflow, Chapter~\ref{chap:ml} covers RFM and K-Means implementation, Chapter~\ref{chap:power_bi} explains the dashboard, Chapter~\ref{chap:business_decisions} develops its proposed business actions, and Chapter~\ref{chap:integration} documents system integration and operational limitations. The report closes with the project's achievements and future work.
+To achieve these objectives, the project delivers an integrated solution consisting of a data warehouse, automated data
+processing pipelines, machine learning-based customer segmentation, and interactive business intelligence dashboards.
+Together, these components transform raw transactional data into meaningful insights that support business analysis and
+decision-making.
