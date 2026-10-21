@@ -14,16 +14,26 @@ At the bottom of the figure, two different paths can be observed. The first proc
 
 The second process happens at the end of each month where customers' RFM values at that specific date(snapshot) are captured and inserted into the \textbf{FactCustomerSnapshot}. Similar to the \textbf{FactCustomerRFMLive}, we get the cluster segment from the DimModelConfig. What\'s more, the data in this fact table will be fetched annually by our data scientists python codebase to retrain our K-means model. Following that, These new metrics are written back to the DimModelConfig and act as the active model version for the next year's customer segment.
 
-Finally, the BI developer will take both information from \textbf{FactCustomerSnapshot} and \textbf{FactCustomerRFMLive} to construct meaningful charts.
+Finally, the BI developer will take information from the data warehouse to construct meaningful charts.
 
 \section{ETL Pipeline \& Data Flow}
 
+\subsection{Customer Control Flow}
+
+\begin{figure}[htbp]
+    \centering % Căn giữa hình ảnh
+    \includegraphics[width=0.8\textwidth]{CustomerDataFlow.png}
+    \caption{DimClusterProfiling and DimCustomerProfiling handling.}
+    \label{fig:customer_control_flow} % Nhãn để dùng cho lệnh tham chiếu \ref{}
+\end{figure}
+
+In the above figure, we show the overview of DimClusterProfiling and DimCustomerProfiling creation. First, a SQL task is executed to generate new bacht ids: 
+
+\subsection{Stage Customer Profiles}
 
 
-
-\subsection{DimCustomerProfiling}
-
-\subsection{DimClusterProfiling}
+\subsection{RFM Live Data Flow}
 
 
+\subsection{RFM Snapshot}
 
