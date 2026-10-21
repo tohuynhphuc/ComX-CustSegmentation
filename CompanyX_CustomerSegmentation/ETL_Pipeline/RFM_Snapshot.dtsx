@@ -11,8 +11,8 @@
   DTS:LocaleID="8192"
   DTS:ObjectName="RFM_Snapshot"
   DTS:PackageType="5"
-  DTS:VersionBuild="7"
-  DTS:VersionGUID="{302313B1-B6E9-4FE1-9D48-13F96B509309}">
+  DTS:VersionBuild="9"
+  DTS:VersionGUID="{34205BFF-BE7E-4F34-969F-6745946D42C2}">
   <DTS:Property
     DTS:Name="PackageFormatVersion">8</DTS:Property>
   <DTS:ConnectionManagers>
@@ -91,25 +91,25 @@
         <NodeLayout
           Size="249.6,41.6"
           Id="Package\Append Monthly Customer Snapshot"
-          TopLeft="188.846157958963,96.5151535634797" />
+          TopLeft="77.3076939913475,57.9090921380878" />
         <NodeLayout
           Size="157.6,41.6"
           Id="Package\Cluster Snapshot"
-          TopLeft="556.923089052094,95.7272747588799" />
+          TopLeft="126.923079687287,135.121214988872" />
         <EdgeLayout
           Id="Package.PrecedenceConstraints[Constraint]"
-          TopLeft="438.446157958963,116.92121416118">
+          TopLeft="203.915386839317,99.5090921380878">
           <EdgeLayout.Curve>
             <mssgle:Curve
               StartConnector="{assembly:Null}"
-              EndConnector="118.476931093131,0"
+              EndConnector="0,35.6121228507838"
               Start="0,0"
-              End="110.976931093131,0">
+              End="0,28.1121228507838">
               <mssgle:Curve.Segments>
                 <mssgle:SegmentCollection
                   Capacity="5">
                   <mssgle:LineSegment
-                    End="110.976931093131,0" />
+                    End="0,28.1121228507838" />
                 </mssgle:SegmentCollection>
               </mssgle:Curve.Segments>
             </mssgle:Curve>

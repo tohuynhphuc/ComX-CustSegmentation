@@ -11,8 +11,8 @@
   DTS:LocaleID="8192"
   DTS:ObjectName="Package"
   DTS:PackageType="5"
-  DTS:VersionBuild="140"
-  DTS:VersionGUID="{DB2A087F-FB99-48CE-B0BB-A39FA17F01FC}">
+  DTS:VersionBuild="144"
+  DTS:VersionGUID="{189AD2DE-1AAA-4BD0-96F9-53D98883C80C}">
   <DTS:Property
     DTS:Name="PackageFormatVersion">8</DTS:Property>
   <DTS:ConnectionManagers>
@@ -1308,33 +1308,33 @@ WHERE d.DateFirstPurchase IS NOT NULL
         <NodeLayout
           Size="185.6,41.6"
           Id="Package\Apply Customer Merge"
-          TopLeft="666.346168358254,360.40909793193" />
+          TopLeft="89.423078870588,338.742430805434" />
         <NodeLayout
           Size="210.4,41.6"
           Id="Package\Generate Customer BatchID"
-          TopLeft="402.403854917647,211.09091310396" />
+          TopLeft="79.326924804554,104.727274482982" />
         <NodeLayout
           Size="201.6,41.6"
           Id="Package\Prepare Customer Staging"
-          TopLeft="402.403854917647,283.083338736321" />
+          TopLeft="83.9423095204553,181.840912345242" />
         <NodeLayout
           Size="191.2,41.6"
           Id="Package\Stage Customer Profiles"
-          TopLeft="403.365393400127,363.348491954929" />
+          TopLeft="86.8269249678942,260.530307954651" />
         <EdgeLayout
           Id="Package.PrecedenceConstraints[Constraint 3]"
-          TopLeft="501.084624158887,324.683338736321">
+          TopLeft="183.584617244175,223.440912345242">
           <EdgeLayout.Curve>
             <mssgle:Curve
               StartConnector="{assembly:Null}"
-              EndConnector="0,38.6651532186081"
+              EndConnector="0,37.0893956094083"
               Start="0,0"
-              End="0,31.1651532186081">
+              End="0,29.5893956094083">
               <mssgle:Curve.Segments>
                 <mssgle:SegmentCollection
                   Capacity="5">
                   <mssgle:LineSegment
-                    End="0,31.1651532186081" />
+                    End="0,29.5893956094083" />
                 </mssgle:SegmentCollection>
               </mssgle:Curve.Segments>
             </mssgle:Curve>
@@ -1345,18 +1345,18 @@ WHERE d.DateFirstPurchase IS NOT NULL
         </EdgeLayout>
         <EdgeLayout
           Id="Package.PrecedenceConstraints[Constraint 4]"
-          TopLeft="594.565393400127,382.67879494343">
+          TopLeft="182.325001919241,302.130307954651">
           <EdgeLayout.Curve>
             <mssgle:Curve
               StartConnector="{assembly:Null}"
-              EndConnector="71.7807749581277,0"
+              EndConnector="0,36.6121228507838"
               Start="0,0"
-              End="64.2807749581277,0">
+              End="0,29.1121228507838">
               <mssgle:Curve.Segments>
                 <mssgle:SegmentCollection
                   Capacity="5">
                   <mssgle:LineSegment
-                    End="64.2807749581277,0" />
+                    End="0,29.1121228507838" />
                 </mssgle:SegmentCollection>
               </mssgle:Curve.Segments>
             </mssgle:Curve>
@@ -1367,18 +1367,18 @@ WHERE d.DateFirstPurchase IS NOT NULL
         </EdgeLayout>
         <EdgeLayout
           Id="Package.PrecedenceConstraints[Constraint 5]"
-          TopLeft="505.403854917647,252.69091310396">
+          TopLeft="184.634617162505,146.327274482982">
           <EdgeLayout.Curve>
             <mssgle:Curve
               StartConnector="{assembly:Null}"
-              EndConnector="0,30.3924256323613"
+              EndConnector="0,35.51363786226"
               Start="0,0"
-              End="0,22.8924256323613">
+              End="0,28.01363786226">
               <mssgle:Curve.Segments>
                 <mssgle:SegmentCollection
                   Capacity="5">
                   <mssgle:LineSegment
-                    End="0,22.8924256323613" />
+                    End="0,28.01363786226" />
                 </mssgle:SegmentCollection>
               </mssgle:Curve.Segments>
             </mssgle:Curve>
@@ -1398,29 +1398,29 @@ WHERE d.DateFirstPurchase IS NOT NULL
         <NodeLayout
           Size="173.6,41.6"
           Id="Package\Stage Customer Profiles\stg Customer Profile"
-          TopLeft="463.599993091822,167.999997496605" />
+          TopLeft="500.138455426041,75.4242379561245" />
         <NodeLayout
           Size="154.8,42.8"
           Id="Package\Stage Customer Profiles\Derived Column"
-          TopLeft="471.341647889838,67.0833283239601" />
+          TopLeft="302.495490366448,74.9621163699585" />
         <NodeLayout
           Size="182.4,41.6"
           Id="Package\Stage Customer Profiles\vPersonDemographics"
-          TopLeft="216.666664332151,68.333333209157" />
+          TopLeft="74.3589689251934,76.2121212551553" />
         <EdgeLayout
           Id="Package\Stage Customer Profiles.Paths[OLE DB Source Output]"
-          TopLeft="399.066664332152,88.8083307665585">
+          TopLeft="256.758968925193,96.6871188125569">
           <EdgeLayout.Curve>
             <mssgle:Curve
               StartConnector="{assembly:Null}"
-              EndConnector="72.2749835576867,0"
+              EndConnector="45.7365214412544,0"
               Start="0,0"
-              End="64.7749835576867,0">
+              End="38.2365214412544,0">
               <mssgle:Curve.Segments>
                 <mssgle:SegmentCollection
                   Capacity="5">
                   <mssgle:LineSegment
-                    End="64.7749835576867,0" />
+                    End="38.2365214412544,0" />
                 </mssgle:SegmentCollection>
               </mssgle:Curve.Segments>
             </mssgle:Curve>
@@ -1431,18 +1431,18 @@ WHERE d.DateFirstPurchase IS NOT NULL
         </EdgeLayout>
         <EdgeLayout
           Id="Package\Stage Customer Profiles.Paths[Derived Column Output]"
-          TopLeft="549.57082049083,109.88332832396">
+          TopLeft="457.295490366448,96.2931771630415">
           <EdgeLayout.Curve>
             <mssgle:Curve
               StartConnector="{assembly:Null}"
-              EndConnector="0,58.1166691726448"
+              EndConnector="42.8429650595931,0"
               Start="0,0"
-              End="0,50.6166691726448">
+              End="35.3429650595931,0">
               <mssgle:Curve.Segments>
                 <mssgle:SegmentCollection
                   Capacity="5">
                   <mssgle:LineSegment
-                    End="0,50.6166691726448" />
+                    End="35.3429650595931,0" />
                 </mssgle:SegmentCollection>
               </mssgle:Curve.Segments>
             </mssgle:Curve>
@@ -1464,6 +1464,14 @@ WHERE d.DateFirstPurchase IS NOT NULL
         <Name>TableInfoObjectType</Name>
         <Value
           type="q2:string">Table</Value>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata>
+  <PipelineComponentMetadata
+    design-time-name="Package\Stage Customer Profiles\vPersonDemographics">
+    <Properties>
+      <Property>
+        <Name>DataSourceViewID</Name>
       </Property>
     </Properties>
   </PipelineComponentMetadata>
