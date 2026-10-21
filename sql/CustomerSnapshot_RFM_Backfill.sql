@@ -133,68 +133,84 @@ GO
 -- 3. Monthly snapshot stored procedure
 -- ============================================
 
-CREATE OR ALTER PROCEDURE
-    dbo.usp_AppendMonthlyRFMSnapshot
+CREATE OR ALTER PROCEDURE dbo.usp_AppendMonthlyRFMSnapshot
     @SnapshotDate DATE
 AS
 BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
 
-    -- Snapshot must be the last day of a month.
-    IF @SnapshotDate IS NULL
-       OR @SnapshotDate <> EOMONTH(@SnapshotDate)
-    BEGIN
-        THROW 51104,
-            'SnapshotDate must be a month-end date.', 1;
-    END;
+    IF @SnapshotDate IS NULL OR @SnapshotDate <> EOMONTH(@SnapshotDate)
+        THROW 51104, 'SnapshotDate must be a month-end date.', 1;
 
-    DECLARE @SnapshotMonth DATE =
-        DATEFROMPARTS(
-            YEAR(@SnapshotDate),
-            MONTH(@SnapshotDate),
-            1
-        );
+    DECLARE @SnapshotMonth DATE = DATEFROMPARTS(YEAR(@SnapshotDate), MONTH(@SnapshotDate), 1);
+    DECLARE @SnapshotDateKey INT = CONVERT(INT, CONVERT(CHAR(8), @SnapshotDate, 112));
 
-    DECLARE @SnapshotDateKey INT =
-        CONVERT(
-            INT,
-            CONVERT(CHAR(8), @SnapshotDate, 112)
-        );
-
-    -- Ensure that the date exists in DimDate.
-    IF NOT EXISTS (
-        SELECT 1
-        FROM dbo.DimDate
-        WHERE DateKey = @SnapshotDateKey
-    )
-    BEGIN
-        THROW 51105,
-            'Snapshot date is missing from DimDate.', 1;
-    END;
+    IF NOT EXISTS (SELECT 1 FROM dbo.DimDate WHERE DateKey = @SnapshotDateKey)
+        THROW 51105, 'Snapshot date is missing from DimDate.', 1;
 
     BEGIN TRY
         BEGIN TRANSACTION;
 
-        -- Prevent concurrent runs from inserting
-        -- duplicate customer-month records.
         DECLARE @LockResult INT;
-
         EXEC @LockResult = sys.sp_getapplock
-            @Resource =
-                'CompanyX_Monthly_Customer_RFM_Snapshot',
+            @Resource = 'CompanyX_Monthly_Customer_RFM_Snapshot',
             @LockMode = 'Exclusive',
             @LockOwner = 'Transaction',
             @LockTimeout = 15000;
 
         IF @LockResult < 0
-        BEGIN
-            THROW 51106,
-                'Could not acquire snapshot lock.', 1;
-        END;
+            THROW 51106, 'Could not acquire snapshot lock.', 1;
 
-        -- Insert historical RFM values.
-        -- ML-related fields remain NULL.
+        -- Stage only customers for whom this month is not yet present.
+        -- Resolve the SCD2 surrogate key before making any insert.
+        SELECT
+            r.CustomerKey_Str,
+            r.LastPurchaseDate,
+            r.RecencyDays,
+            r.Frequency365d,
+            r.Monetary365d,
+            CASE
+                WHEN history_at_date.ClusterProfilingSK IS NOT NULL
+                    THEN history_at_date.ClusterProfilingSK
+                WHEN earliest_profile.StartDate > @SnapshotDate
+                    THEN earliest_profile.ClusterProfilingSK
+                ELSE NULL
+            END AS ClusterProfilingSK
+        INTO #NewSnapshotRows
+        FROM dbo.ufn_ComputeCustomerRFM(@SnapshotDate) AS r
+        INNER JOIN dbo.DimCustomerProfiling AS dc
+            ON dc.CustomerKey_Str = r.CustomerKey_Str
+        OUTER APPLY
+        (
+            SELECT TOP (1) p.ClusterProfilingSK
+            FROM dbo.DimClusterProfiling AS p
+            WHERE p.CustomerKey_Str = r.CustomerKey_Str
+              AND p.StartDate <= @SnapshotDate
+              AND p.EndDate >= @SnapshotDate
+            ORDER BY p.StartDate DESC, p.ClusterProfilingSK DESC
+        ) AS history_at_date
+        OUTER APPLY
+        (
+            SELECT TOP (1) p.ClusterProfilingSK, p.StartDate
+            FROM dbo.DimClusterProfiling AS p
+            WHERE p.CustomerKey_Str = r.CustomerKey_Str
+            ORDER BY p.StartDate ASC, p.ClusterProfilingSK ASC
+        ) AS earliest_profile
+        WHERE r.LastPurchaseDate IS NOT NULL
+          AND NOT EXISTS
+          (
+              SELECT 1
+              FROM dbo.FactCustomerSnapshot AS s WITH (UPDLOCK, HOLDLOCK)
+              WHERE s.CustomerKey_Str = r.CustomerKey_Str
+                AND s.SnapshotMonth = @SnapshotMonth
+          );
+
+        -- Do not silently omit eligible customers or leave their SK blank.
+        IF EXISTS (SELECT 1 FROM #NewSnapshotRows WHERE ClusterProfilingSK IS NULL)
+            THROW 51107,
+                'Some snapshot customers have no usable DimClusterProfiling version. Load/repair customer profiles first.', 1;
+
         INSERT INTO dbo.FactCustomerSnapshot
         (
             CustomerKey_Str,
@@ -215,54 +231,35 @@ BEGIN
             r.CustomerKey_Str,
             @SnapshotMonth,
             @SnapshotDateKey,
-            NULL AS ModelConfigKey,
-            NULL AS ClusterProfilingSK,
-            NULL AS ClusterSegment,
+            NULL,
+            r.ClusterProfilingSK,
+            NULL,
             r.LastPurchaseDate,
             r.RecencyDays,
             r.Frequency365d,
             r.Monetary365d,
-            NULL AS ScaledR,
-            NULL AS ScaledF,
-            NULL AS ScaledM
-        FROM dbo.ufn_ComputeCustomerRFM(
-            @SnapshotDate
-        ) AS r
-        INNER JOIN dbo.DimCustomerProfiling AS dc
-            ON dc.CustomerKey_Str = r.CustomerKey_Str
-        WHERE r.LastPurchaseDate IS NOT NULL
-          AND NOT EXISTS (
-              SELECT 1
-              FROM dbo.FactCustomerSnapshot AS s
-                   WITH (UPDLOCK, HOLDLOCK)
-              WHERE s.CustomerKey_Str =
-                    r.CustomerKey_Str
-                AND s.SnapshotMonth =
-                    @SnapshotMonth
-          );
+            NULL,
+            NULL,
+            NULL
+        FROM #NewSnapshotRows AS r;
 
         DECLARE @RowsInserted INT = @@ROWCOUNT;
 
         COMMIT TRANSACTION;
 
-        -- Report execution results.
         SELECT
             @SnapshotDate AS SnapshotDate,
             @RowsInserted AS RowsInserted,
-            (
-                SELECT COUNT(*)
-                FROM dbo.FactCustomerSnapshot
-                WHERE SnapshotMonth = @SnapshotMonth
-            ) AS TotalRowsForMonth;
-
+            (SELECT COUNT(*)
+             FROM dbo.FactCustomerSnapshot
+             WHERE SnapshotMonth = @SnapshotMonth) AS TotalRowsForMonth;
     END TRY
     BEGIN CATCH
-        IF @@TRANCOUNT > 0
-            ROLLBACK TRANSACTION;
-
+        IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
         THROW;
     END CATCH;
 END;
 GO
+
 
 PRINT 'Monthly RFM snapshot procedure installed.';

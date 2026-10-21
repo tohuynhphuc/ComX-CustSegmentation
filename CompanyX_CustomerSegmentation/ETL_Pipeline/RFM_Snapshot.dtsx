@@ -11,8 +11,8 @@
   DTS:LocaleID="8192"
   DTS:ObjectName="RFM_Snapshot"
   DTS:PackageType="5"
-  DTS:VersionBuild="4"
-  DTS:VersionGUID="{699778D8-D32C-47E3-B854-1338AE9F3A57}">
+  DTS:VersionBuild="6"
+  DTS:VersionGUID="{3FAFFEE5-0A73-4C8C-B9E8-8289224EA73C}">
   <DTS:Property
     DTS:Name="PackageFormatVersion">8</DTS:Property>
   <DTS:ConnectionManagers>
@@ -40,12 +40,29 @@
       DTS:LocaleID="-1"
       DTS:ObjectName="Append Monthly Customer Snapshot"
       DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2025; © 2025 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
-      DTS:ThreadHint="0">
+      DTS:ThreadHint="1">
       <DTS:Variables />
       <DTS:ObjectData>
         <SQLTask:SqlTaskData
           SQLTask:Connection="{70216564-EC66-41B1-852A-74873A09982D}"
           SQLTask:SqlStatementSource="&#xA;DECLARE @SnapshotDate DATE;&#xA;&#xA;SET @SnapshotDate = EOMONTH(GETDATE(), -1);&#xA;&#xA;EXEC dbo.usp_AppendMonthlyRFMSnapshot&#xA;    @SnapshotDate = @SnapshotDate;&#xA;" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
+      </DTS:ObjectData>
+    </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Cluster Snapshot"
+      DTS:CreationName="Microsoft.ExecuteSQLTask"
+      DTS:Description="Execute SQL Task"
+      DTS:DTSID="{FAD2BE38-740C-4A17-814E-7D136344ADD3}"
+      DTS:ExecutableType="Microsoft.ExecuteSQLTask"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Cluster Snapshot"
+      DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2025; © 2025 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="0">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <SQLTask:SqlTaskData
+          SQLTask:Connection="{70216564-EC66-41B1-852A-74873A09982D}"
+          SQLTask:SqlStatementSource="EXEC dbo.usp_ClusterCustomerRFMSnapshot;" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
       </DTS:ObjectData>
     </DTS:Executable>
   </DTS:Executables>
@@ -65,6 +82,10 @@
           Size="249.6,41.6"
           Id="Package\Append Monthly Customer Snapshot"
           TopLeft="188.846157958963,96.5151535634797" />
+        <NodeLayout
+          Size="157.6,41.6"
+          Id="Package\Cluster Snapshot"
+          TopLeft="556.923089052094,95.7272747588799" />
       </GraphLayout>
     </LayoutInfo>
   </Package>

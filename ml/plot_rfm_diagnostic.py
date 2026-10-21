@@ -26,7 +26,7 @@ from sklearn.decomposition import PCA
 from sklearn.metrics import silhouette_samples, silhouette_score
 from sklearn.preprocessing import StandardScaler
 
-from helpers import (
+from ml.model_core import (
     extract_snapshot,
     clean_rfm,
     to_log_matrix,

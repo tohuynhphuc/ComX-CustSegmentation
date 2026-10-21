@@ -1,6 +1,6 @@
 from datetime import date
 
-from helpers import (extract_snapshot, list_snapshot_dates, clean_rfm,
+from ml.model_core import (extract_snapshot, list_snapshot_dates, clean_rfm,
                      fetch_config_by_version, score_frame, execute_many, read_sql)
 from train_model import train_version
 
@@ -10,10 +10,10 @@ SCORE_ALL_MONTHS = True
 
 # (train_year, valid_from, years whose NULL segments this version fills)
 BOOTSTRAP_PLAN = [
-    (2011, date(2011, 1, 1), [2011, 2012]),
-    (2012, date(2013, 1, 1), [2013]),
-    (2013, date(2014, 1, 1), [2014]),
-    (2014, date(2015, 1, 1), []),
+    (2011, date(2011, 1, 1), [2011]),
+    # (2012, date(2013, 1, 1), [2013]),
+    # (2013, date(2014, 1, 1), [2014]),
+    # (2014, date(2015, 1, 1), []),
 ]
 
 
