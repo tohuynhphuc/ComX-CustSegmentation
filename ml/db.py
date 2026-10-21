@@ -8,8 +8,8 @@ ENGINE = create_engine(
     fast_executemany=True,
 )
 
-LIVE_TABLE = 'dbo.DimCustomerRFMLive'
-SEGMENT_COL = 'CustomerSegment'
+LIVE_TABLE = 'dbo.FactCustomerRFMLive'
+SEGMENT_COL = 'ClusterSegment'
 
 CFG_COLS = """
     ModelConfigKey, ModelVersion, ClusterID, ClusterSegment,
@@ -31,9 +31,13 @@ def fetch_active_config():
 
 def fetch_live():
     return pd.read_sql(f"""
-        SELECT CustomerKey, Recency, Frequency, Monetary,
-               {SEGMENT_COL} AS CurrentSegment,
-               ModelConfigKey AS CurrentModelKey
+        SELECT
+            CustomerKey_Str AS CustomerKey,
+            RecencyDays AS Recency,
+            Frequency365d AS Frequency,
+            Monetary365d AS Monetary,
+            {SEGMENT_COL} AS CurrentSegment,
+            ModelConfigKey AS CurrentModelKey
         FROM {LIVE_TABLE}
     """, ENGINE)
 
@@ -44,9 +48,9 @@ def write_segments(rows):
         return 0
     sql = text(f"""
         UPDATE {LIVE_TABLE}
-        SET {SEGMENT_COL}  = :segment,
+        SET {SEGMENT_COL} = :segment,
             ModelConfigKey = :model_key
-        WHERE CustomerKey  = :customer_key
+        WHERE CustomerKey_Str = :customer_key
     """)
     with ENGINE.begin() as conn:
         conn.execute(sql, rows)

@@ -1,7 +1,15 @@
-from datetime import date
+from datetime import date, timedelta
 
-from ml.model_core import (extract_snapshot, list_snapshot_dates, clean_rfm,
-                     fetch_config_by_version, score_frame, execute_many, read_sql)
+from model_core import (
+    get_connection,
+    extract_snapshot,
+    list_snapshot_dates,
+    clean_rfm,
+    fetch_config_by_version,
+    score_frame,
+    execute_many,
+    read_sql,
+)
 from train_model import train_version
 
 # True: fill NULL segments for every month of the scored year (the snapshot stays complete).

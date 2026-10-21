@@ -7,7 +7,7 @@ def run():
     # Latest model version from DimModelConfig
     cfg = fetch_active_config()
 
-    # Current RFM rows from DimCustomerRFMLive
+    # Current RFM rows from FactCustomerRFMLive
     live = fetch_live()
 
     scored = score_frame(clean_rfm(live), cfg).merge(

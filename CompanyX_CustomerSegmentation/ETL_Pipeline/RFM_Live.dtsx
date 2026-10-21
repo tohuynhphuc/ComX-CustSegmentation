@@ -11,8 +11,8 @@
   DTS:LocaleID="8192"
   DTS:ObjectName="RFM_Live"
   DTS:PackageType="5"
-  DTS:VersionBuild="9"
-  DTS:VersionGUID="{36AF5D56-A2F5-43E5-946B-0F02320B873C}">
+  DTS:VersionBuild="12"
+  DTS:VersionGUID="{9DC0614C-F0D1-4A1E-81AF-ED3039BC770A}">
   <DTS:Property
     DTS:Name="PackageFormatVersion">8</DTS:Property>
   <DTS:ConnectionManagers>
@@ -35,6 +35,7 @@
       DTS:refId="Package\Cluster Customer"
       DTS:CreationName="Microsoft.ExecuteSQLTask"
       DTS:Description="Execute SQL Task"
+      DTS:Disabled="True"
       DTS:DTSID="{DA9187E6-5965-4A98-9B55-6D0431701DC5}"
       DTS:ExecutableType="Microsoft.ExecuteSQLTask"
       DTS:LocaleID="-1"
@@ -57,7 +58,7 @@
       DTS:LocaleID="-1"
       DTS:ObjectName="Refresh Customer RFM Live"
       DTS:TaskContact="Execute SQL Task; Microsoft Corporation; SQL Server 2025; © 2025 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
-      DTS:ThreadHint="0">
+      DTS:ThreadHint="1">
       <DTS:Variables />
       <DTS:ObjectData>
         <SQLTask:SqlTaskData
@@ -65,16 +66,35 @@
           SQLTask:SqlStatementSource="EXEC dbo.usp_RefreshCustomerRFMLive;" xmlns:SQLTask="www.microsoft.com/sqlserver/dts/tasks/sqltask" />
       </DTS:ObjectData>
     </DTS:Executable>
+    <DTS:Executable
+      DTS:refId="Package\Score Live Customers"
+      DTS:CreationName="Microsoft.ExecuteProcess"
+      DTS:Description="Execute Process Task"
+      DTS:DTSID="{04D5973C-A40E-46E1-963B-DB8B4836A55B}"
+      DTS:ExecutableType="Microsoft.ExecuteProcess"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Score Live Customers"
+      DTS:TaskContact="Execute Process Task;Microsoft Corporation; SQL Server 2025; © 2025 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1"
+      DTS:ThreadHint="1">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <ExecuteProcessData
+          Executable="C:\Users\LENOVO\AppData\Local\Programs\Python\Python313\python.exe"
+          Arguments="&quot;D:\VGU\4th Year\Business Intelligence\Project\ml\live_clustering.py&quot;"
+          WorkingDirectory="D:\VGU\4th Year\Business Intelligence\Project\ml"
+          TimeOut="600" />
+      </DTS:ObjectData>
+    </DTS:Executable>
   </DTS:Executables>
   <DTS:PrecedenceConstraints>
     <DTS:PrecedenceConstraint
       DTS:refId="Package.PrecedenceConstraints[Constraint]"
       DTS:CreationName=""
-      DTS:DTSID="{A086F391-9B7C-4C2D-AC18-EF99DBDF6AF6}"
+      DTS:DTSID="{207F7D74-2E7F-46BB-B5D9-E05D7714C096}"
       DTS:From="Package\Refresh Customer RFM Live"
       DTS:LogicalAnd="True"
       DTS:ObjectName="Constraint"
-      DTS:To="Package\Cluster Customer" />
+      DTS:To="Package\Score Live Customers" />
   </DTS:PrecedenceConstraints>
   <DTS:DesignTimeProperties><![CDATA[<?xml version="1.0"?>
 <!--This CDATA section contains the layout information of the package. The section includes information such as (x,y) coordinates, width, and height.-->
@@ -89,27 +109,43 @@
       <GraphLayout
         Capacity="4" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml">
         <NodeLayout
+          Size="159.2,42.4"
+          Id="Package\Cluster Customer"
+          TopLeft="537.692319402505,56.7272739311881" />
+        <NodeLayout
           Size="208,41.6"
           Id="Package\Refresh Customer RFM Live"
           TopLeft="154.615387982695,86.2727291036819" />
         <NodeLayout
-          Size="159.2,42.4"
-          Id="Package\Cluster Customer"
-          TopLeft="449.230779014396,85.4848502990821" />
+          Size="180,41.6"
+          Id="Package\Score Live Customers"
+          TopLeft="372.307700416041,160.727276138366" />
         <EdgeLayout
           Id="Package.PrecedenceConstraints[Constraint]"
-          TopLeft="362.615387982695,106.878789701382">
+          TopLeft="258.615387982695,127.872729103682">
           <EdgeLayout.Curve>
             <mssgle:Curve
               StartConnector="{assembly:Null}"
-              EndConnector="86.6153910317008,0"
+              EndConnector="203.692312433346,32.8545470346844"
               Start="0,0"
-              End="79.1153910317008,0">
+              End="203.692312433346,25.3545470346844">
               <mssgle:Curve.Segments>
                 <mssgle:SegmentCollection
                   Capacity="5">
                   <mssgle:LineSegment
-                    End="79.1153910317008,0" />
+                    End="0,12.4272735173422" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,12.4272735173422"
+                    Point2="0,16.4272735173422"
+                    Point3="4,16.4272735173422" />
+                  <mssgle:LineSegment
+                    End="199.692312433346,16.4272735173422" />
+                  <mssgle:CubicBezierSegment
+                    Point1="199.692312433346,16.4272735173422"
+                    Point2="203.692312433346,16.4272735173422"
+                    Point3="203.692312433346,20.4272735173422" />
+                  <mssgle:LineSegment
+                    End="203.692312433346,25.3545470346844" />
                 </mssgle:SegmentCollection>
               </mssgle:Curve.Segments>
             </mssgle:Curve>
