@@ -97,7 +97,7 @@ WHERE d.DateFirstPurchase IS NOT NULL
        )
   );
     \end{lstlisting}
-    The extraction selects customers with a first purchase whose relevant demographic attributes have changed compared to the warehouse. The \texttt{EXCEPT} predicates compare groups of attributes, including nullable values, performing change detection without requiring a complete reload on every execution.
+    The extraction selects customers with a first purchase whose relevant demographic attributes are missing or different from the warehouse’s current values. The \texttt{EXCEPT} predicates compare groups of attributes, including nullable values, performing change detection without requiring a complete reload on every execution.
 
     \item \textbf{Derived Column Transformation:} Normalizes input values and standardizes missing demographic attributes before staging, assigning configured fallback defaults (such as \texttt{"Unknown"}, \texttt{0}, and \texttt{"U"}) as shown in Figure~\ref{fig:derived_col}.
 
