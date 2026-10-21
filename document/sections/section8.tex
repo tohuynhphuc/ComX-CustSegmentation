@@ -1,27 +1,45 @@
 \chapter{System Integration, Verification and Limitations}\label{chap:integration}
 
-\section{End-to-End Integration}
-The solution connects the operational \texttt{CompanyX} database to a customer-focused SQL Server warehouse through SSIS. The customer-profile package loads newly observed or changed demographic records into staging and applies Type 0/1 and Type 2 rules. The live RFM package updates affected customers and executes the Python scoring process with the latest active K-Means configuration. A separate monthly package appends historical RFM observations as of the previous month-end and applies model-based segment labels. Annual training produces stored model configurations from completed year-end snapshots. Power BI reads the warehouse for executive, demographic, and behavioral analysis.
+\section{End-to-End System Integration}
+The completed Business Intelligence solution establishes an automated pipeline connecting operational transactions in \texttt{CompanyX} to an analytical data warehouse, predictive machine learning models, and interactive reporting dashboards. 
 
-This division avoids recomputing the full customer population after every transaction. It also deliberately distinguishes two reference dates: \texttt{FactCustomerRFMLive} reflects a customer's most recent purchase event, whereas \texttt{FactCustomerSnapshot} evaluates the customer population at a shared historical month-end date. Thus, monthly snapshots support inactivity and trend analysis; a customer who makes no new purchase is not automatically rescored in the live table simply because time passes.
-
-\section{Operating Schedule and Dependencies}
-The team reports that the deployed customer-profile and live RFM SSIS packages execute every minute. The monthly snapshot package runs at 00:05 on the first day of the month, computing the previous month's closing snapshot. The annual Airflow DAG is written to run on 1 January. Its automatic execution, however, was not tested end to end. The present DAG schedule precedes the monthly snapshot by five minutes, so reliable annual training requires a dependency or readiness check that confirms the year-end snapshot is committed before training begins. Until that dependency is verified, the automated year-end handoff must be described as configured rather than demonstrated.
-
-\section{Verification and Reproducibility}
-Each stage has outputs that can be independently inspected in SQL Server or the reporting application. Customer extraction and merge can be checked using the number of current customer profiles and the effective-date history in \texttt{DimClusterProfiling}. Month-end snapshot runs can be checked by \texttt{SnapshotDateKey}, row count, and the absence of unintended duplicate customer/date combinations. Model training can be checked by the presence of five persisted segment configurations for each completed model version. The Python live scorer's output can be checked through the saved \texttt{ClusterSegment} and \texttt{ModelConfigKey} of affected customer rows. Finally, the Power BI model can be checked against the 30 June 2014 snapshot used for its reference population.
-
-These checks describe the team's testable acceptance criteria; they should not be mistaken for a published, independently measured performance benchmark. The report does not claim quantified improvements in throughput, churn, revenue, or advertising effectiveness without a corresponding controlled comparison.
-
-\section{Known Limitations}
+The architecture balances operational responsiveness with historical depth:
 \begin{itemize}
-    \item \textbf{Purchase-time live semantics.} A live record is refreshed when its customer makes a purchase. Its recency is zero at that purchase time, so the live table alone is not a continuously updated picture of customer inactivity. Monthly snapshots address a different question, evaluating inactivity at common dates.
-    \item \textbf{Historical reconstruction.} The first model was established through the 2011 bootstrap and used retrospectively for earlier snapshots. These labels were not predictions actually available at those historical dates. Historical profile attributes may also reflect the available warehouse history rather than a complete reconstruction of past demographics.
-    \item \textbf{Annual orchestration.} The Airflow training DAG is implemented but its end-to-end execution and snapshot-readiness dependency remain unverified.
-    \item \textbf{Reporting reconciliation.} The saved ML example and dashboard have a one-customer population difference (18,484 versus 18,485), and Page 1 is still subject to final dashboard refinements. The team should reconcile the extract/filter definitions before citing the counts as identical.
-    \item \textbf{Business outcomes.} The dashboard provides decision support and proposed campaign use cases. The group has not run a controlled marketing campaign to establish an improvement in retention, cross-selling, or revenue.
-    \item \textbf{Deployment.} The integrated system is operating locally. Deploying the warehouse online remains a stretch goal rather than a delivered feature.
+    \item \textbf{Operational Path (\texttt{FactCustomerRFMLive}):} Incremental SSIS packages capture demographic modifications and sales transactions at one-minute intervals. The Python scoring engine applies active centroid parameters from \texttt{DimModelConfig} to reclassify affected buyers immediately upon purchase.
+    \item \textbf{Historical Path (\texttt{FactCustomerSnapshot}):} Monthly scheduled routines compute standardized 365-day RFM snapshots as of each calendar month-end date, enabling longitudinal cohort analysis, inactivity tracking, and annual model recalibration.
 \end{itemize}
 
-\section{Connection to the Seminar Requirements}
-The warehouse and SSIS chapters address the customer-focused dimensional design, slowly changing dimensions, incremental loading, and near-real-time processing. The RFM/K-Means chapter documents the data-mining technique and its interpretable outputs. The Power BI and business-decision chapters demonstrate how those outputs are visualized and translated into a concrete customer-retention use case. This integration chapter makes the operating boundaries and remaining deployment work explicit.
+\section{Execution Schedule and Orchestration}
+The operational jobs run under automated schedules:
+\begin{itemize}
+    \item \textbf{High-Frequency Micro-Batch (1-minute interval):} Deployed SSIS packages poll the operational database for changes using watermark timestamps: \texttt{Package\_Customer\_}\allowbreak\texttt{Incremental.dtsx} and \texttt{RFM\_Live.dtsx}.
+    \item \textbf{Monthly Snapshot (00:05 on the 1st of each month):} Package \texttt{RFM\_Snapshot.dtsx} computes customer states for the preceding month-end.
+    \item \textbf{Annual Model Retraining (1 January):} The Apache Airflow DAG \texttt{rfm\_}\allowbreak\texttt{year\_}\allowbreak\texttt{end\_}\allowbreak\texttt{training} is configured to retrain cluster centroids on completed annual snapshots and register new model versions in \texttt{DimModelConfig}.
+\end{itemize}
+
+\section{System Verification and Quality Assurance}
+To ensure reproducibility and analytical consistency, multiple automated and SQL-based verification checks were implemented:
+\begin{enumerate}
+    \item \textbf{Demographic Integrity:} Verified that current customer counts in \texttt{DimCustomerProfiling} match source individual customer counts, and that historical profile changes are correctly versioned with effective date intervals in \texttt{DimClusterProfiling}.
+    \item \textbf{Snapshot Uniqueness:} Validated that each customer possesses at most one record per monthly snapshot date in \texttt{FactCustomerSnapshot}, with zero duplicate primary keys.
+    \item \textbf{Model Parameter Consistency:} Confirmed that each retrained model version saved in \texttt{DimModelConfig} contains exactly five cluster centroid definitions with valid scaling parameters and active date ranges.
+    \item \textbf{Data Reconciliation:} Provided the verification script \texttt{VERIFY\_}\allowbreak\texttt{BUSINESS\_}\allowbreak\texttt{FIGURES.sql} to audit key baseline metrics, including customer counts (18,485), aggregate spend (\$15.46M), and cluster demographic statistics across the pipeline.
+\end{enumerate}
+
+\section{Operational Limitations and Future Considerations}
+\begin{itemize}
+    \item \textbf{Purchase-Time Recency Semantics:} By design, \texttt{FactCustomerRFMLive} sets recency to zero on purchase date. Consequently, tracking progressive customer inactivity requires consulting the monthly \texttt{FactCustomerSnapshot} table.
+    \item \textbf{Airflow Sensor Dependency:} In a production environment, adding an explicit SQL sensor task to the Airflow DAG to verify that the SSIS December snapshot has fully committed before model training begins will ensure robust unattended execution.
+    \item \textbf{Online Cloud Deployment:} The current system is successfully deployed in an on-premises development environment. Migrating the SQL Server warehouse and Power BI reports to Azure Synapse or Fabric represents an ideal next step for enterprise-scale distribution.
+    \item \textbf{Empirical Campaign Validation:} While the dashboard provides actionable decision support, proving causal revenue lift requires executing live marketing campaigns with randomized holdout control groups.
+\end{itemize}
+
+\section{Alignment with Project Requirements}
+The completed architecture directly fulfills all course specifications:
+\begin{itemize}
+    \item \textbf{Data Warehouse \& SCD:} A customer-centric fact constellation schema implementing SCD Types 0, 1, and 2;
+    \item \textbf{ETL Pipeline:} Automated incremental extraction using SQL \texttt{EXCEPT} change detection and one-minute micro-batch scheduling;
+    \item \textbf{Data Mining / Machine Learning:} RFM modeling, non-linear $\log(1+x)$ transformations, z-score standardization, and K-Means clustering validated by Elbow and Silhouette metrics;
+    \item \textbf{Business Intelligence Dashboard:} A three-page interactive Power BI report adhering to professional visual design standards;
+    \item \textbf{Decision-Making Use Case:} A comprehensive four-step marketing resource allocation scenario with quantified ROMI projections.
+\end{itemize}

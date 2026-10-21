@@ -140,3 +140,6 @@ Desktop.ini
 !.env.example
 
 main.pdfout/
+
+out/
+

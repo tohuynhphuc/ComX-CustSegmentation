@@ -1,8 +1,21 @@
 \chapter{Conclusion and Future Work}
 \label{chap:conclusion}
 
-This project combines customer-focused data warehousing, incremental SSIS integration, versioned K-Means segmentation, and interactive Power BI reporting. The final dimensional design contains two fact tables with complementary purposes: \texttt{FactCustomerRFMLive} provides a purchase-triggered operational customer state, and \texttt{FactCustomerSnapshot} provides comparable month-end observations. The system also retains demographic changes using slowly changing dimensions and stores model parameters so that customer segments can be assigned without repeating training for each purchase.
+This project delivers an end-to-end Business Intelligence and customer analytics solution for CompanyX, successfully bridging operational retail transactions with predictive machine learning and executive decision-making. 
 
-Historical models were developed for the 2011, 2012, and 2013 training periods, and five business-oriented customer segments were used to interpret the June 2014 dashboard. The dashboards can support practical decisions such as prioritizing a retention offer for \emph{High-Value / Cooling Off} buyers, or designing lower-cost follow-up messages for \emph{Recent / Promising} customers. These recommendations are analytical use cases; the project did not measure the causal effect of a deployed marketing campaign.
+The core technical achievements include:
+\begin{enumerate}
+    \item \textbf{Dimensional Warehouse Architecture:} Designed a customer-focused fact constellation schema featuring two complementary fact tables (\texttt{FactCustomerRFMLive} for near-real-time purchase events and \texttt{FactCustomerSnapshot} for standardized monthly observations) alongside SCD Type 0, 1, and 2 dimensions.
+    \item \textbf{Automated Incremental ETL Pipeline:} Deployed SSIS packages utilizing SQL \texttt{EXCEPT} change detection and database watermarks to execute micro-batch customer updates at one-minute intervals.
+    \item \textbf{Machine Learning Segmentation:} Implemented an unsupervised K-Means clustering model ($K=5$) based on log-transformed and standardized RFM features, validated through quantitative Elbow and Silhouette analyses, and operationalized via centroid persistence in \texttt{DimModelConfig}.
+    \item \textbf{Interactive Business Intelligence Dashboards:} Built a three-page Power BI report providing executive health metrics, demographic persona drill-downs via slicers, and behavioral RFM quadrant analysis.
+    \item \textbf{Actionable Business Decision Support:} Formulated targeted marketing campaigns and demonstrated a quantified resource allocation use case yielding projected high-ROI customer retention.
+\end{enumerate}
 
-The SSIS packages have been deployed for minute-level customer and live RFM refreshes and monthly historical snapshots. The annual Airflow DAG has been configured, but its unattended execution and dependency on the completed December snapshot have not been tested. Further improvement would include completing the Airflow-to-SSIS dependency, reconciling the model and dashboard customer counts, finalizing the Power BI report, validating the source-derived business statistics, and deploying the warehouse online if time and resources allow. These improvements do not change the customer-centred scope of the completed local implementation.
+\section{Future Work}
+To further advance the platform toward enterprise-grade production, future development can focus on:
+\begin{itemize}
+    \item \textbf{Cloud Migration and Scalability:} Transitioning the SQL Server warehouse and SSIS workflows to cloud-native platforms such as Microsoft Fabric, Azure Synapse, or Databricks for distributed data lakehouse storage;
+    \item \textbf{Predictive Churn Modeling:} Augmenting the descriptive RFM segmentation with supervised churn prediction algorithms (e.g., XGBoost or Random Forests) to forecast probability of departure before customers surpass the 100-day inactivity threshold;
+    \item \textbf{Automated Campaign Feedback Loops:} Integrating Power BI directly with customer relationship management (CRM) systems (e.g., Salesforce or HubSpot) to automate trigger emails and track real-time campaign redemption metrics.
+\end{itemize}

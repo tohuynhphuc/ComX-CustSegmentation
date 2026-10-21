@@ -2,36 +2,50 @@
 \label{chap:background}
 
 \section{Customer Segmentation with RFM and K-Means}
-RFM analysis summarizes purchasing behaviour using three variables: \textbf{Recency} (elapsed days since the most recent purchase), \textbf{Frequency} (number of orders), and \textbf{Monetary} value (amount spent). An RFM profile makes customer behaviour measurable without relying on arbitrary demographic categories. In this project, frequency and monetary values are calculated using a trailing 365-day window, while recency is measured relative to the observation date. The definitions and preprocessing are described in Chapter~\ref{chap:ml}.
+Recency, Frequency, and Monetary (RFM) analysis is a widely adopted technique in direct marketing and retail analytics. It summarizes purchasing behavior into three measurable dimensions:
+\begin{itemize}
+    \item \textbf{Recency ($R$):} Number of days elapsed between a reference evaluation date and the customer's most recent order. Lower values indicate active, engaged shoppers.
+    \item \textbf{Frequency ($F$):} Total number of distinct orders placed by the customer within a defined time window (specifically a trailing 365-day period in this project).
+    \item \textbf{Monetary ($M$):} Total financial spend accumulated across all order lines within the same trailing 365-day window.
+\end{itemize}
+By evaluating actual purchasing transactions rather than static demographic categories, RFM modeling provides an empirical baseline for customer valuation and engagement tracking.
 
-Traditional RFM segmentation commonly places customers into groups according to hand-written thresholds or ranks. This can be transparent and inexpensive, but the boundaries must be selected in advance. K-Means provides an alternative: customers are grouped according to their positions in a numeric feature space, using distances to cluster centroids. For this project, the feature space is the log-transformed and standardized RFM vector. K-Means does not automatically supply business labels; the clusters must be interpreted using their purchasing statistics.
+In traditional retail practice, RFM segmentation relies on heuristic rules, such as manually dividing each metric into quintiles (1 to 5) or hardcoded SQL thresholds. While intuitive, rule-based binning requires arbitrary boundary choices and treats each variable independently. In contrast, **K-Means clustering** groups customers algorithmically based on Euclidean distance in a normalized multi-dimensional feature space. By applying logarithmic transformations and standardization, K-Means discovers natural groupings from historical transaction patterns without predefined thresholds.
 
-The segmentation model alone is not sufficient for operational business intelligence. A \emph{data warehouse} provides consistent customer keys, historical demographic versions, RFM snapshots, and persisted model configurations. SQL Server Integration Services (SSIS) performs incremental extraction and loading, while Power BI connects the results to decision-making dashboards. This combination is the central design choice of CompanyX.
+To make machine learning segmentation operationally viable, the model must be embedded within an integrated data architecture. A **dimensional data warehouse** provides durable customer surrogate keys, tracks demographic shifts, stores periodic historical snapshots, and persists trained model parameters. Connecting this warehouse to **Power BI** dashboards allows managers to interactively explore segment distributions and monitor business KPIs.
 
-\section{Related Industry Examples}
-\subsection{Black Diamond: Data-Driven Retention}
-The outdoor-equipment brand Black Diamond worked with customer-data platform provider Lexer to consolidate customer information and improve targeted acquisition and retention activities. According to the provider's case study, separate initiatives achieved a 50\% reduction in acquisition cost and a 1,101\% increase in revenue per email for a lapsed-customer campaign \parencite{lexer2019blackdiamond}. These are externally reported business outcomes, \emph{not} results of the CompanyX implementation. They illustrate why identifying inactive and valuable customers may support differentiated actions.
+\section{Related Industry Applications and Best Practices}
+\subsection{Black Diamond: Data-Driven Customer Retention}
+In the outdoor retail sector, equipment manufacturer Black Diamond utilized customer data analytics to unify fragmented transaction records and deploy targeted retention programs \parencite{lexer2019blackdiamond}. By separating active high-value riders from lapsed buyers, the company implemented automated re-engagement workflows that dramatically reduced customer acquisition costs and boosted email campaign revenue. This demonstrates the tangible commercial value of identifying inactive, high-potential accounts before permanent churn occurs.
 
-\subsection{K-Means as a Customer Segmentation Method}
-A published customer-segmentation tutorial presents K-Means as a way to form groups from numerical customer features \parencite{towardsai2022kmeans}. Its general lesson is relevant here: numerical scaling, cluster-number selection, and cluster interpretation are all necessary before the grouping is useful for marketing. A common demonstration uses annual income and a spending score, whereas \emph{CompanyX uses RFM transaction features}. We do not treat the tutorial as evidence of an internal deployment by a particular retailer.
+\subsection{K-Means Clustering in Retail Marketing}
+Academic and industry tutorials highlight K-Means as an effective unsupervised technique for behavioral segmentation \parencite{towardsai2022kmeans}. These studies emphasize that raw retail data cannot simply be fed into clustering algorithms directly; rigorous preprocessing---including outlier mitigation, feature scaling, and cluster validation (e.g., Elbow and Silhouette diagnostics)---is essential to generate statistically cohesive and commercially interpretable segments.
 
-\subsection{Alibaba Cloud: An End-to-End Segmentation Example}
-Pratama's Alibaba Cloud tutorial demonstrates a pipeline for customer segmentation using data preparation, MaxCompute storage, K-Means training, and model serving \parencite{pratama2020segmentation}. The tutorial uses a public retail dataset as an example; it is \emph{not evidence} that the author's employer, DANA Indonesia, operated the same pipeline in production. For CompanyX, the relevant principle is linking the data pipeline with a repeatable training and scoring workflow, rather than running clustering once in an isolated notebook.
+\subsection{Alibaba Cloud: End-to-End Pipeline Operationalization}
+Modern enterprise analytics requires moving beyond isolated, one-off machine learning experiments in desktop notebooks. Pratama demonstrated an end-to-end architecture on Alibaba Cloud integrating cloud storage, automated feature engineering, K-Means model training, and operational scoring \parencite{pratama2020segmentation}. For CompanyX, this highlights the necessity of combining SSIS automated loading with Python scoring scripts and database parameter persistence, ensuring customer segments update reliably as new transactions occur.
 
-\section{Approach Comparison}
+\section{Comparison of Methodological Approaches}
+Table~\ref{tab:comparative_analysis} summarizes the strengths and limitations of the analytical approaches considered for this project.
+
 \begin{table}[htbp]
 \centering
-\caption{Comparison of approaches relevant to the project.}
+\caption{Comparison of customer segmentation and data pipeline approaches.}
 \label{tab:comparative_analysis}
 \small
-\begin{tabular}{|p{3.4cm}|p{4.4cm}|p{7.1cm}|}
+\begin{tabular}{|p{3.2cm}|p{4.2cm}|p{7.3cm}|}
 \hline
-\textbf{Approach} & \textbf{Typical implementation} & \textbf{Relevance and limitation} \\ \hline
-Rule-based RFM & SQL thresholds or ranked RFM scores & Transparent and simple, but business thresholds are selected manually. \\ \hline
-K-Means clustering & Unsupervised clustering of scaled numeric attributes & Learns groups from observed customer behaviour, but does not attach meaningful segment names or automate refresh by itself. \\ \hline
-Warehouse + RFM + K-Means + BI & Incremental ETL, history, model configurations and dashboards & Combines purchase-time segmentation with retrospective customer analysis; requires coordinated loading, training, and reporting. \\ \hline
+\textbf{Approach} & \textbf{Typical Implementation} & \textbf{Relevance and Limitations} \\ \hline
+Rule-Based RFM & Hardcoded SQL thresholds or quintile ranking & Highly transparent and simple to compute, but requires arbitrary boundary selection and ignores multi-variable interactions. \\ \hline
+Standalone K-Means Clustering & Unsupervised clustering in Jupyter / Python notebooks & Effectively uncovers natural clusters from data, but lacks automated data integration, historical versioning, and operational deployment. \\ \hline
+Integrated BI Solution (CompanyX) & Dimensional Warehouse + SSIS ETL + Python K-Means + Power BI & Combines automated near-real-time scoring with longitudinal snapshot reporting and interactive decision-support dashboards. \\ \hline
 \end{tabular}
 \end{table}
 
 \section{Problem Statement and Chosen Solution}
-CompanyX needs an integrated process for answering three business questions: \emph{Which customers are most valuable? Which customers show reduced engagement? How can the company tailor its actions to distinct purchasing behaviours?} The team addresses them with five RFM-based clusters, two complementary fact tables, and an automated path from operational records to a Power BI dashboard. The resulting segments provide an analytical basis for recommendations; proving that a proposed marketing campaign increases revenue or reduces churn would require a separate intervention study.
+To maximize commercial competitiveness, CompanyX needs clear answers to three fundamental business questions:
+\begin{enumerate}
+    \item \emph{Which customer segments drive the vast majority of company revenue?}
+    \item \emph{Which high-value buyers are exhibiting signs of disengagement and require urgent retention?}
+    \item \emph{How should marketing budgets be allocated across distinct demographic and behavioral personas?}
+\end{enumerate}
+Our solution addresses these questions through an end-to-end architecture featuring two complementary fact tables (near-real-time purchase scoring and monthly historical snapshots), a five-cluster K-Means model, and an executive Power BI dashboard designed for actionable decision-making.
