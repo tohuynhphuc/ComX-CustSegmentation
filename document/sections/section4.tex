@@ -18,8 +18,16 @@ Finally, the BI developer will take information from the data warehouse to const
 
 \section{ETL Pipeline \& Data Flow}
 
-\subsection{Customer Data Flow}
+\subsection{Customer Control Flow}
 
+\begin{figure}[htbp]
+    \centering % Căn giữa hình ảnh
+    \includegraphics[width=0.8\textwidth]{CustomerDataFlow.png}
+    \caption{DimClusterProfiling and DimCustomerProfiling handling.}
+    \label{fig:customer_control_flow} % Nhãn để dùng cho lệnh tham chiếu \ref{}
+\end{figure}
+
+In the above figure, we show the overview of DimClusterProfiling and DimCustomerProfiling creation. First, a SQL task is executed to generate new bacht ids: 
 
 \subsection{Stage Customer Profiles}
 
