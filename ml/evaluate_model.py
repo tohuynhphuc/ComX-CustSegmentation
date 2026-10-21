@@ -78,6 +78,7 @@ def forward_business_backtest(baseline_scored):
           ON d.SalesOrderID = h.SalesOrderID
         WHERE h.OrderDate >= '2014-01-01'
           AND h.OrderDate <  '2014-07-01'
+          AND h.Status = 5
         GROUP BY h.CustomerID
         """)
     future["CustomerKey"] = future["CustomerKey"].astype(str)

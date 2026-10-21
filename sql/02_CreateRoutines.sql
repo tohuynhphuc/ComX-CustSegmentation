@@ -52,6 +52,7 @@ RETURN
                         INNER JOIN
                         CompanyX.Sales.SalesOrderDetail AS d
                         ON d.SalesOrderID = h.SalesOrderID
+                        AND h.Status = 5
                WHERE    h.OrderDate < DATEADD(DAY, 1, @AsOfDate)
                -- TODO: Decide which SalesOrderHeader.Status values count as completed purchases.
                GROUP BY h.CustomerID, h.SalesOrderID, h.OrderDate) AS s
@@ -313,6 +314,7 @@ BEGIN
                        INNER JOIN
                        CompanyX.Sales.SalesOrderDetail AS d
                        ON d.SalesOrderID = h.SalesOrderID
+                       WHERE h.Status = 5
               GROUP BY h.CustomerID, h.SalesOrderID, h.OrderDate),
              LatestPurchase
         AS   (SELECT   CustomerID,
