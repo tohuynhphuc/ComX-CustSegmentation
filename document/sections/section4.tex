@@ -1,9 +1,25 @@
 \chapter{System Workflow}
 
+\section{The General View}
+Before diving into the complex ETL pipeline, readers should examine the general workflow of our system as follows:
+
+\begin{figure}[htbp]
+    \centering % Căn giữa hình ảnh
+    \includegraphics[width=0.8\textwidth]{finalSystemWorkflow.png}
+    \caption{System Workflow: the image presents a high-level procedure about how transactions made by customers are processed.}
+    \label{fig:system_workflow} % Nhãn để dùng cho lệnh tham chiếu \ref{}
+\end{figure}
+
+At the bottom of the figure, two different paths can be observed. The first process starts with customers purchasing items from CompanyX. Then, those transactions go through our ETL steps before reaching the data warehouse and are stored in \textbf{FactCustomerRFMLive}. Regardless of which operation(insert, update) is performed (as mentioned in \ref{subsec:factcustomerRFMlive}), the results are a new R, F, and M value with updated last purchase date, and remarkably a (near) real-time clustering. This is done by using metrics stored in DimModelConfig to normalize RFM before computing it Euclidean distances against centroid values to finalized the cluster segment.
+
+The second process happens at the end of each month where customers' RFM values at that specific date(snapshot) are captured and inserted into the \textbf{FactCustomerSnapshot}. Similar to the \textbf{FactCustomerRFMLive}, we get the cluster segment from the DimModelConfig. What\'s more, the data in this fact table will be fetched annually by our data scientists python codebase to retrain our K-means model. Following that, These new metrics are written back to the DimModelConfig and act as the active model version for the next year's customer segment.
+
+Finally, the BI developer will take both information from \textbf{FactCustomerSnapshot} and \textbf{FactCustomerRFMLive} to construct meaningful charts.
+
 \section{ETL Pipeline \& Data Flow}
 
 
-\section{Dimension Layer \& Slowly Changing Dimension Strategy}
+
 
 \subsection{DimCustomerProfiling}
 
