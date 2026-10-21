@@ -17,10 +17,11 @@ The second process happens at the end of each month where customers' RFM values 
 Finally, the BI developer will take information from the data warehouse to construct meaningful charts.
 
 \section{ETL Pipeline \& Data Flow}
+We present the readers with control flows of the system inside SSIS package. For further details, please refer to our submitted system resources.
 
 \subsection{Customer Control Flow}
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering % Căn giữa hình ảnh
     \includegraphics[width=0.8\textwidth]{CustomerDataFlow.png}
     \caption{DimClusterProfiling and DimCustomerProfiling handling.}
@@ -29,11 +30,131 @@ Finally, the BI developer will take information from the data warehouse to const
 
 In the above figure, we show the overview of DimClusterProfiling and DimCustomerProfiling creation. First, a SQL task is executed to generate new bacht ids: 
 
-\subsection{Stage Customer Profiles}
+\begin{lstlisting}[caption={Batch ID Generation}, label={lst:batch_gen}]
+SELECT CONVERT(VARCHAR(36), NEWID()) AS BatchID;
+\end{lstlisting}
 
+After that, we clean the contents in previous runs in Preparing Customer Staging:
 
-\subsection{RFM Live Data Flow}
+\begin{lstlisting}[caption={Customer Profile Truncation}, label={lst:trun_stg_table}]
+TRUNCATE TABLE CompanyX_DataWarehouse.stg.CustomerProfile;
+\end{lstlisting}
 
+Following up, we examine the data flow inside Stage Customer Profiles:
+\begin{figure}[htbp]
+    \centering % Căn giữa hình ảnh
+    \includegraphics[width=0.8\textwidth]{StageCustomerProfiles.png}
+    \caption{Data Flow of Stage Customer Profiles.}
+    \label{fig:data_flow_cust} % Nhãn để dùng cho lệnh tham chiếu \ref{}
+\end{figure}
+
+Overall, there are three components:
+\begin{itemize}
+    \item{vPersonDemographics:} is the Source OLE DB block, which is used to query data from CompanyX database. After our careful data exploration, we came up with the SQL command:
+    \begin{lstlisting}[caption={Table Selection}, label={lst:tab_select}]
+SELECT
+    c.CustomerID AS CustomerKey,
+    d.BusinessEntityID,
+    CAST(d.BirthDate AS DATE) AS BirthDate,
+    d.Gender,
+    d.MaritalStatus,
+    d.YearlyIncome,
+    d.TotalChildren,
+    d.Education,
+    d.Occupation,
+    CAST(d.HomeOwnerFlag AS TINYINT) AS HomeOwnerFlag,
+    d.NumberCarsOwned,
+    CAST(d.DateFirstPurchase AS DATE) AS DateFirstPurchase,
+    st.[Name] AS CountryName,
+    st.[Group] AS RegionGroup
+FROM Sales.vPersonDemographics AS d
+INNER JOIN Sales.Customer AS c
+    ON d.BusinessEntityID = c.PersonID
+LEFT JOIN Sales.SalesTerritory AS st
+    ON c.TerritoryID = st.TerritoryID
+LEFT JOIN CompanyX_DataWarehouse.dbo.DimCustomerProfiling AS dc
+    ON dc.CustomerKey_Str = CONVERT(NVARCHAR(20), c.CustomerID)
+LEFT JOIN CompanyX_DataWarehouse.dbo.DimClusterProfiling AS dp
+    ON dp.CustomerKey_Str = CONVERT(NVARCHAR(20), c.CustomerID)
+   AND dp.IsCurrent = 1
+WHERE d.DateFirstPurchase IS NOT NULL
+  AND (
+       dc.CustomerKey_Str IS NULL
+       OR dp.CustomerKey_Str IS NULL
+       OR EXISTS (
+           SELECT d.Gender, d.MaritalStatus, d.TotalChildren,
+                  CONVERT(BIT, d.HomeOwnerFlag), d.NumberCarsOwned
+           EXCEPT
+           SELECT dc.Gender, dc.MaritalStatus, dc.TotalChildren,
+                  dc.HomeOwnerFlag, dc.NumberCarsOwned
+       )
+       OR EXISTS (
+           SELECT d.YearlyIncome, d.Education, d.Occupation,
+                  st.[Name], st.[Group]
+           EXCEPT
+           SELECT dp.YearlyIncome, dp.Education, dp.Occupation,
+                  dp.CountryName, dp.RegionGroup
+       )
+  );
+    \end{lstlisting}
+    To summarize, the script selects customers' demographics data that needs to be be added or updated in the data warehouse. Interestingly, we have the WHERE clause which filters for customers with purchases who either do not exist in the warehouse or have outdated details. By utilizing EXCEPT clauses inside EXISTS conditions, it efficiently detects any changes in key attributes—such as personal profile data or geographical income data—acting as an incremental data load filter.
+
+    \item{Derived Column:} cleans input data in case there are anomalies
+    \begin{figure}[htbp]
+    \centering % Căn giữa hình ảnh
+    \includegraphics[width=0.8\textwidth]{DerivedColumn.png}
+    \caption{Derived Column: input data cleaning step.}
+    \label{fig:derived_col} % Nhãn để dùng cho lệnh tham chiếu \ref{}
+\end{figure}
+    Notably, we focused on handling NULL values with the decision that it would be converted to default fallback such as "Unknown", $0$, or "U"
+    \item{stg Customer Profile:} creates the table \ref{subsec:stg_tab} to prepare for Merge process
+\end{itemize}
+
+Finally, the process ends with the SQL task Apply Customer Merge, which is vital to apply SCD tracking to each dimension:
+\begin{lstlisting}[caption={Merge}, label={lst:merge}]
+DECLARE @BatchID UNIQUEIDENTIFIER = CONVERT(UNIQUEIDENTIFIER, ?);
+IF EXISTS (
+    SELECT 1
+    FROM stg.CustomerProfile
+    WHERE BatchID = @BatchID
+)
+BEGIN
+    EXEC dbo.usp_ApplyCustomerProfileBatch @BatchID = @BatchID;
+END;
+\end{lstlisting}
+
+\subsection{RFM Live}
+\begin{figure}[H]
+    \centering % Căn giữa hình ảnh
+    \includegraphics[width=0.8\textwidth]{RFMLiveFlow.png}
+    \caption{FactCustomerRFMLive handling.}
+    \label{fig:RFM_live} % Nhãn để dùng cho lệnh tham chiếu \ref{}
+\end{figure}
+pass
 
 \subsection{RFM Snapshot}
+\begin{figure}[H]
+    \centering % Căn giữa hình ảnh
+    \includegraphics[width=0.8\textwidth]{RFMSnapshot.png}
+    \caption{FactCustomerSnapshot handling.}
+    \label{fig:RFM_snapshot} % Nhãn để dùng cho lệnh tham chiếu \ref{}
+\end{figure}
+
+The first block Append Monthly Customer Snapshot will calculate the RFM values monthly for the \textbf{FactCustomerSnapshot}:
+\begin{lstlisting}[caption={Monthly RFM Calculation}, label={lst:month_RFM}]
+DECLARE @BatchID UNIQUEIDENTIFIER = CONVERT(UNIQUEIDENTIFIER, ?);
+DECLARE @SnapshotDate DATE;
+
+SET @SnapshotDate = EOMONTH(GETDATE(), -1);
+
+EXEC dbo.usp_AppendMonthlyRFMSnapshot
+    @SnapshotDate = @SnapshotDate;
+\end{lstlisting}
+
+Next, the second block Cluster Snapshot will determine the cluster segment:
+\begin{lstlisting}[caption={Monthly Cluster Segment}, label={lst:month_cluster}]
+EXEC dbo.usp_ClusterCustomerRFMSnapshot;
+\end{lstlisting}
+
+
 

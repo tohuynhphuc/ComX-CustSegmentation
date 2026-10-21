@@ -12,6 +12,7 @@ We propose our data warehouse design as below:
 At a first glance, we can observe that the blueprint follows a Galaxy Schema (Fact Constellation) which consists of two fact tables, namely \textbf{FactCustomerSnapshot}, \textbf{FactCustomerRFMLive}; four dimensions including DimModelConfig, DimClusterProfiling, DimDate, DimCustomerProfiling; and an additional \verb|CustomerProfile| staging table for incremental loading process (using T-SQL Merge). We discuss in details about these elements later in this chapter.
 
 \section{Staging Layer}
+\label{subsec:stg_tab}
 
 The table's primary key is the combination of \textbf{BatchID} and \textbf{CustomerKey\_Str}. Conceptually, this relational table acts as a Message Queue, which stores and prepares the demographics data of customers before updating or inserting necessary entries into DimClusterProfiling and DimCustomerProfiling. Moreover, with the help of batching, this table enhances the fault tolerance property of our system. For example, we can monitor the status of a specific batch with ease and rerun it in case that our ETL process encounters problems like crashes and power outage.
 
@@ -19,7 +20,7 @@ The table's primary key is the combination of \textbf{BatchID} and \textbf{Custo
 
 \subsection{DimCustomerProfiling}
 
-We designed this dimension so that it stores customers\' personal information that rarely change or their historical records are not worth being put into storage. These are: birth date, gender, marital status, total number of Children, Home Owner status, and total number of cars owned by that customer. And since one distinct customer corresponds to one row, we converted CustomerId from CompanyX.Sales.Customer to string and reuses it as the Primary key of this dimension.
+We designed this dimension so that it stores customers' personal information that does not change(SCD type 0), rarely change or their historical records are not worth being put into storage (SCD type 1). These are: birth date, gender, marital status, total number of Children, Home Owner status, and total number of cars owned by that customer. And since one distinct customer corresponds to one row, we converted CustomerId from CompanyX.Sales.Customer to string and reuses it as the Primary key of this dimension.
 
 \subsection{DimClusterProfiling}
 
