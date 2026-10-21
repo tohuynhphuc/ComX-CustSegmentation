@@ -4,10 +4,17 @@
 
 \section{Motivation}
 
-The CompanyX transactional database contains purchases from May 2011 through June 2014. However, raw sales records alone do not identify which customer groups require different business strategies. This chapter follows the team's implemented approach: summarize purchase behaviour using RFM, clean and transform the features, fit K-Means to customer snapshots, and translate the resulting numeric clusters into interpretable segment names. The trained configurations can then be reused by the operational scoring pipeline and historical snapshot process.
+The CompanyX transactional database contains purchases from May 2011 through June 2014. However, raw sales records
+alone do not identify which customer groups require different business strategies. This chapter follows the team's
+implemented approach: summarize purchase behaviour using RFM, clean and transform the features, fit K-Means to customer
+snapshots, and translate the resulting numeric clusters into interpretable segment names. The trained configurations
+can then be reused by the operational scoring pipeline and historical snapshot process.
 
 \subsection{RFM Variables}
-Recency (R) is the number of days from an evaluation date to the customer's last purchase. Frequency (F) is the count of distinct sales orders within the trailing 365 days. Monetary (M) is the sum of order-line amounts within that same 365-day period. Recency may exceed 365 days for customers who have not purchased recently. The year-end training snapshots used by the project are 31 December 2011, 2012, and 2013; there is no 2014 trained model.
+Recency (R) is the number of days from an evaluation date to the customer's last purchase. Frequency (F) is the count
+of distinct sales orders within the trailing 365 days. Monetary (M) is the sum of order-line amounts within that same
+365-day period. Recency may exceed 365 days for customers who have not purchased recently. The year-end training
+snapshots used by the project are 31 December 2011, 2012, and 2013; there is no 2014 trained model.
 
 \section{Data Cleaning}
 
@@ -143,7 +150,9 @@ data and stored, so that new customers are scaled in the same way.
 
 \section{K-Means Clustering}
 
-K-Means is an unsupervised algorithm that partitions observations into \(K\) clusters by iteratively assigning each point to the nearest centroid and updating centroid locations. The project fits scikit-learn \texttt{KMeans} with \(K=5\), \texttt{k-means++} initialization, \texttt{n\_init=10}, \texttt{max\_iter=300}, and \texttt{random\_state=42}.
+K-Means is an unsupervised algorithm that partitions observations into \(K\) clusters by iteratively assigning each
+point to the nearest centroid and updating centroid locations. The project fits scikit-learn \texttt{KMeans} with
+\(K=5\), \texttt{k-means++} initialization, \texttt{n\_init=10}, \texttt{max\_iter=300}, and \texttt{random\_state=42}.
 
 For each data point in the dataset, calculate the Euclidean distance between the point and each centroid. Assign the
 data point to the cluster with the closest centroid
@@ -159,7 +168,8 @@ Where:
   \item $n$ : indicates the total number of the attribute for each data point
 \end{itemize}
 
-Within-cluster sum of squares (WCSS), also called inertia, measures the total squared distance from observations to their assigned centroids:
+Within-cluster sum of squares (WCSS), also called inertia, measures the total squared distance from observations to
+their assigned centroids:
 
 \[ \mathrm{WCSS}=\sum_{k=1}^{K}\sum_{i\in S_k}\sum_{j=1}^{3}(x_{ij}-c_{kj})^2. \]
 
@@ -180,7 +190,12 @@ criteria, which is Silhouette, also needs to be considered. The silhouette score
 cohesive clusters are in K-Means clustering. It evaluates each data point's fit relative to its own cluster versus
 neighboring clusters.
 
-Figures~\ref{fig:elbow_2013} and~\ref{fig:silhouette_2013} reproduce the diagnostic plots already saved with the project for the 31 December 2013 snapshot. Inertia decreases as \(K\) increases, while the silhouette metric measures separation between clusters. The silhouette score for \(K=5\) is approximately 0.518; \(K=2\) achieves a higher score (approximately 0.636) on this snapshot. Therefore five clusters were chosen as a \emph{business-interpretability trade-off}, supported by the elbow/silhouette diagnostics and the desire for distinct actionable customer profiles, not because five globally maximizes the silhouette score.
+Figures~\ref{fig:elbow_2013} and~\ref{fig:silhouette_2013} reproduce the diagnostic plots already saved with the
+project for the 31 December 2013 snapshot. Inertia decreases as \(K\) increases, while the silhouette metric measures
+separation between clusters. The silhouette score for \(K=5\) is approximately 0.518; \(K=2\) achieves a higher score
+(approximately 0.636) on this snapshot. Therefore five clusters were chosen as a \emph{business-interpretability
+  trade-off}, supported by the elbow/silhouette diagnostics and the desire for distinct actionable customer profiles, not
+because five globally maximizes the silhouette score.
 
 \begin{figure}[htbp]
   \centering
@@ -195,10 +210,10 @@ Figures~\ref{fig:elbow_2013} and~\ref{fig:silhouette_2013} reproduce the diagnos
   \label{fig:silhouette_2013}
 \end{figure}
 
-K-Means only returns a numeric cluster ID (0 to 4) for each customer, which reflects no value of what the groups mean. Moreover,
-annually the model is retrained and the number from 0 to 4 is different and not staying consistent. Therefore, to turn
-them into meaningful clusters automatically, a solution is implemented: Each cluster on an RFM variable is given
-``points'', based on how its average compares with the other clusters. The rules are
+K-Means only returns a numeric cluster ID (0 to 4) for each customer, which reflects no value of what the groups mean.
+Moreover, annually the model is retrained and the number from 0 to 4 is different and not staying consistent.
+Therefore, to turn them into meaningful clusters automatically, a solution is implemented: Each cluster on an RFM
+variable is given ``points'', based on how its average compares with the other clusters. The rules are
 
 For Monetary and Frequency: the cluster with the highest average gets 5 points and the lowest get 1. (the higher these
 values are, the more valuable they are)
@@ -228,10 +243,14 @@ The outcome will look like this:
     1                & 602.92                                      & 0.00                                          & 0.00                                         & 1                 & 1                 & 1                 & 3.1            & Lost / Dormant           \\
     \hline
   \end{tabular}
+  \caption{RFM Cluster Statistics and Segment Assignment}
+  \label{tab:rfm_cluster_statistics}
   \endgroup
 \end{table}
 
-The example model output was recorded for an 18,484-customer analysis extract. The final dashboard chapter reports 18,485 customers for its June 2014 view. This one-record difference has not been reconciled in the submitted materials, so the two counts should not be presented as an identical population without verification.
+The example model output was recorded for an 18,484-customer analysis extract. The final dashboard chapter reports
+18,485 customers for its June 2014 view. This one-record difference has not been reconciled in the submitted materials,
+so the two counts should not be presented as an identical population without verification.
 
 Champions (cluster 4) has the highest frequency and spend, with an average of 2.55 purchases and 1,694 in total. Its
 average recency is 110 days, so these customers are valuable but have not bought recently.
@@ -257,5 +276,8 @@ also provides valuable insights for strategic business decision-making. Therefor
 and launch effective marketing strategies to each cluster of customers, not only to retain the occasional buyers, but
 also to come up with attractive promotions for recent customers.
 
-The first historical model was initialized with \texttt{bootstrap.py} from the 2011 year-end snapshot, including retrospective labels for earlier months. Separate 2012 and 2013 models were then saved with \texttt{train\_model.py}. The most recent active model is used by the Python live scorer. These saved model versions support repeatable clustering without retraining on every purchase.
+The first historical model was initialized with \texttt{bootstrap.py} from the 2011 year-end snapshot, including
+retrospective labels for earlier months. Separate 2012 and 2013 models were then saved with \texttt{train\_model.py}.
+The most recent active model is used by the Python live scorer. These saved model versions support repeatable
+clustering without retraining on every purchase.
 
