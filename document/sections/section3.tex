@@ -41,5 +41,6 @@ This is a periodic snapshot fact table, which means that it will be appended wit
 Using this window is necessary to avoid sensonality bias and match the real world inter-purchase interval.
 
 \subsection{FactCustomerRFMLive}
+\label{subsec:factcustomerRFMlive}
 
 This fact table will update everytime a customer makes a transaction. However, it is different from a traditional transaction table in the sense that instead of only inserting, this table will act differently depending the customer. If he/she is the first time purchasing items, it will append the record. Otherwise, his/her old row will get overwritten by RFM values and customer segmetn derived from the new transaction. By having two fact tables as presented, we achieve separation of concerns by storing the historical records in one table and keeping up with the new real-time updates in another. This is critical when we need to compare customer segmentation over years or months and at the same time manage to take actions based on the up-to-date transactional/reporting performance.
