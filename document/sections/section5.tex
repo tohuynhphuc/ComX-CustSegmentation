@@ -1,0 +1,285 @@
+
+% Chapter content only — insert with \input{customer_segmentation_chapter.tex}
+\chapter{RFM Analysis and K-Means Clustering}
+
+\section{Motivation}
+
+After investigation in the CompanyX database from 2011 to 2014, it is easy to state a problem, which is the absence of
+identifying and categorizing customers. Without targeted marketing strategies to customers, it is difficult to retain
+customers, leading to the loss in profit and revenue.
+
+To address the problem of unstructured customer data, this project implements the RFM method, which summarizes each
+customer's buying behaviour with three variables, and groups customers with K-Means Clustering. This analysis enables
+data-driven segmentation, facilitating strategies such as targeted marketing, retention campaigns, or loyalty
+programmes aligned with actual customer behaviour. The data comes from the sales records of CompanyX, covering from May
+2011 to December 2014.
+
+\subsection{RFM variables}
+
+Recency (R): the number of days since the customer's last purchase.
+
+Frequency (F): the total number of purchases the customer has made.
+
+Monetary (M): the total amount the customer has spent up to the snapshot date.
+
+\section{Data Cleaning}
+
+The raw data is first ingested from the FactCustomerSnapshot, and then processed through deduplication. After that, any
+R, F, or M values are missing, the process stops and reports the number of affected rows to the ETL Team. Anomalies
+values such as negative values are set to zero, since a purchase count or a monetary value can not be negative.
+
+This subset of data serves a representative overview of customer purchases based on RFM analysis as mentioned above.
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \begin{tabular}{rrrr}
+    \hline
+    \textbf{Customer} & \textbf{Recency} & \textbf{Frequency} & \textbf{Monetary} \\
+    \hline
+    11057             & 37               & 1                  & 3729.36           \\
+    11058             & 22               & 1                  & 3756.99           \\
+    11060             & 12               & 1                  & 3756.99           \\
+    11061             & 18               & 1                  & 3729.36           \\
+    11072             & 0                & 1                  & 3756.99           \\
+    11238             & 84               & 1                  & 3756.99           \\
+    11239             & 71               & 1                  & 3729.36           \\
+    11240             & 32               & 1                  & 3756.99           \\
+    11243             & 38               & 1                  & 3756.99           \\
+    11244             & 47               & 1                  & 3756.99           \\
+    11247             & 41               & 1                  & 3729.36           \\
+    11250             & 14               & 1                  & 3756.99           \\
+    11333             & 10               & 1                  & 3756.99           \\
+    11334             & 27               & 1                  & 3756.99           \\
+    11337             & 22               & 1                  & 3729.36           \\
+    11591             & 79               & 1                  & 3953.99           \\
+    11592             & 79               & 1                  & 3953.99           \\
+    11593             & 69               & 1                  & 3953.99           \\
+    11599             & 72               & 1                  & 3953.99           \\
+    11601             & 71               & 1                  & 3953.99           \\
+    11606             & 82               & 1                  & 3953.99           \\
+    11607             & 71               & 1                  & 3953.99           \\
+    \hline
+  \end{tabular}
+  \caption{RFM analysis}
+\end{table}
+
+\section{Log transformation}
+
+Spending and purchase counts are usually right-skewed. Most customers spend a moderate amount, while only a small
+number spend many times more. If raw values are used, these large values stretch the scale and the K-Means model spends
+more effort unnecessarily separating a few high spenders (outliers) rather than grouping typical customers. By using
+log transformation, the issue can be minimized.
+
+For example, a customer who spends 3,000 and 300,000 differs by a factor of 100 in raw terms, but their log values
+differ by only 4.6. We use log(1+x) in this case, written log1p because some customers have a value of zero, which
+leads to log(0) undefined.
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \begin{tabular}{rrrr}
+    \hline
+    \textbf{Customer} & \textbf{Recency} & \textbf{Frequency} & \textbf{Monetary} \\
+    \hline
+    11057             & 3.638            & 0.693              & 8.224             \\
+    11058             & 3.135            & 0.693              & 8.232             \\
+    11060             & 2.565            & 0.693              & 8.232             \\
+    11061             & 2.944            & 0.693              & 8.224             \\
+    11072             & 0.000            & 0.693              & 8.232             \\
+    11238             & 4.443            & 0.693              & 8.232             \\
+    11239             & 4.277            & 0.693              & 8.224             \\
+    11240             & 3.497            & 0.693              & 8.232             \\
+    11243             & 3.664            & 0.693              & 8.232             \\
+    11244             & 3.871            & 0.693              & 8.232             \\
+    11247             & 3.738            & 0.693              & 8.224             \\
+    11250             & 2.708            & 0.693              & 8.232             \\
+    11333             & 2.398            & 0.693              & 8.232             \\
+    11334             & 3.332            & 0.693              & 8.232             \\
+    11337             & 3.135            & 0.693              & 8.224             \\
+    11591             & 4.382            & 0.693              & 8.283             \\
+    11592             & 4.382            & 0.693              & 8.283             \\
+    11593             & 4.248            & 0.693              & 8.283             \\
+    11599             & 4.290            & 0.693              & 8.283             \\
+    11601             & 4.277            & 0.693              & 8.283             \\
+    11606             & 4.419            & 0.693              & 8.283             \\
+    11607             & 4.277            & 0.693              & 8.283             \\
+    \hline
+  \end{tabular}
+  \caption{Logged Data}
+\end{table}
+
+\section{Standardization}
+
+Before importing data to run the K-Means Clustering model, it is essential to standardize the RFM values to ensure that
+each metric contributes equally to the analysis, since Recency, Frequency, and Monetary values are measured on
+different scales. K-Means relies heavily on distances (later will be shown), so a variable with a larger spread would
+dominate the result.
+
+StandardScaler solves this by subtracting the mean and dividing by the standard deviation of each variable, so that
+each one has a mean of 0 and a standard deviation of 1. The mean and standard deviation are estimated from the training
+data and stored, so that new customers are scaled in the same way.
+
+\begin{table}[htbp]
+  \centering
+  \small
+  \begin{tabular}{rrrr}
+    \hline
+    \textbf{Customer} & \textbf{Recency} & \textbf{Frequency} & \textbf{Monetary} \\
+    \hline
+    11057             & 0.109            & 0.000              & -0.875            \\
+    11058             & -0.392           & 0.000              & -0.581            \\
+    11060             & -0.962           & 0.000              & -0.581            \\
+    11061             & -0.583           & 0.000              & -0.875            \\
+    11072             & -3.522           & 0.000              & -0.581            \\
+    11238             & 0.913            & 0.000              & -0.581            \\
+    11239             & 0.747            & 0.000              & -0.875            \\
+    11240             & -0.032           & 0.000              & -0.581            \\
+    11243             & 0.135            & 0.000              & -0.581            \\
+    11244             & 0.342            & 0.000              & -0.581            \\
+    11247             & 0.209            & 0.000              & -0.875            \\
+    11250             & -0.819           & 0.000              & -0.581            \\
+    11333             & -1.128           & 0.000              & -0.581            \\
+    11334             & -0.196           & 0.000              & -0.581            \\
+    11337             & -0.392           & 0.000              & -0.875            \\
+    11591             & 0.852            & 0.000              & 1.454             \\
+    11592             & 0.852            & 0.000              & 1.454             \\
+    11593             & 0.719            & 0.000              & 1.454             \\
+    11599             & 0.761            & 0.000              & 1.454             \\
+    11601             & 0.747            & 0.000              & 1.454             \\
+    11606             & 0.889            & 0.000              & 1.454             \\
+    11607             & 0.747            & 0.000              & 1.454             \\
+    \hline
+  \end{tabular}
+  \caption{Standardized Data}
+\end{table}
+
+\section{K-Means Clustering}
+
+K-Means is an unsupervised machine learning algorithm used to partition data into a dataset into K distinct,
+non-overlapping clusters. The purpose of this part is to find the most optimal K, meaning that the optimal number of
+groups categorizing customers.
+
+For each data point in the dataset, calculate the Euclidean distance between the point and each centroid. Assign the
+data point to the cluster with the closest centroid
+
+\[d(x, y) = \sqrt{\sum_{n} (y_i - x_i)^2}\]
+
+Where:
+\begin{itemize}
+  \item $d(x, y)$: the distance between data point x and centroid y
+  \item $y_i$: donates the value of the i-th attribute value of centroid y
+  \item $x_i$: represents the i-th attribute of the data point x
+  \item $i$ : refers to index of the attribute
+  \item $n$ : indicates the total number of the attribute for each data point
+\end{itemize}
+
+The WCSS is calculated to measure the compactness of the clusters. For each cluster, compute the sum of squared
+distances between each data point and its cluster centroid(Kuraria et al., 2018),(Cui, 2020):
+
+\[WCSS = \sum \sum \sum (x_{ij} - \bar{x}_{kj})^2\]
+
+Where:
+\begin{itemize}
+  \item K: Total number of clusters.
+  \item k: An index that refers to the current cluster, ranging from 1 to K.
+  \item $S_k$: The set of data points assigned to cluster k.
+  \item p: Number of features or dimensions in the dataset.
+  \item j: An index that refers to the current feature or dimension, ranging from 1 to p.
+  \item $x_{ij}$: The j-th feature value of the i-th data point.
+  \item $\bar{x}_{kj}$: The mean value of the j-th feature in cluster k (i.e., the centroid's value).
+  \item $(x_{ij} - \bar{x}_{kj})^2$: The squared Euclidean distance between the j-th feature of data point xi and the corresponding feature of the centroid of its cluster.
+\end{itemize}
+
+This WCSS can also be known as the Inertia, the lower means the tighter the data points are grouped. Another important
+criteria, which is Silhouette, also needs to be considered. The silhouette score measures how well-separated and
+cohesive clusters are in K-Means clustering. It evaluates each data point's fit relative to its own cluster versus
+neighboring clusters.
+
+\begin{center}
+  \fbox{\parbox{0.83\linewidth}{\centering Graph: Elbow Method to find optimal K}}
+\end{center}
+
+\begin{center}
+  \fbox{\parbox{0.83\linewidth}{\centering Graph: Silhouette Score based on different K}}
+\end{center}
+
+Prior to clustering, the optimal number of clusters (k) is determined by the Elbow Method, which plots the
+Within-Cluster Sum of Squares (WCSS) against different values of k. The point at which the rate of decrease sharply
+(the elbow) is identified at k = 5, suggesting that five clusters offer a good balance.
+
+Then the standardized RFM data is then fit to the standardized RFM Model, resulting in cluster labels among customers.
+The results are visualized using 2D scatter plots of RFM components, colored by cluster.
+
+\begin{center}
+  \fbox{\parbox{0.83\linewidth}{\centering Graph: Customer Clusters}}
+\end{center}
+
+K Means only returns a number of each customer (0 to 4), which reflects no value of what the groups mean. Moreover,
+annually the model is retrained and the number from 0 to 4 is different and not staying consistent. Therefore, to turn
+them into meaningful clusters automatically, a solution is implemented: Each cluster on an RFM variable is given
+``points'', based on how its average compares with the other clusters. The rules are
+
+For Monetary and Frequency: the cluster with the highest average gets 5 points and the lowest get 1. (the higher these
+values are, the more valuable they are)
+
+For Recency: the rule is reversed because shorter time since the last purchase is better.
+
+\noindent Formula:     Score = Monetary Points + Frequency Points + Recency Points x 1.1
+
+Recency is weighted slightly higher, because a recent purchase is a strong sign that a customer is still active. Points
+are given to clusters, not to individual customers.
+
+The outcome will look like this:
+
+\begin{table}[htbp]
+  \centering
+  \begingroup
+  \scriptsize
+  \setlength{\tabcolsep}{2pt}
+  \begin{tabular}{rrrrrrrrl}
+    \hline
+    \textbf{Cluster} & \shortstack{\textbf{Avg}\\\textbf{Recency}} & \shortstack{\textbf{Avg}\\\textbf{Frequency}} & \shortstack{\textbf{Avg}\\\textbf{Monetary}} & \textbf{R points} & \textbf{F points} & \textbf{M points} & \textbf{Score} & \textbf{Segment}         \\
+    \hline
+    4                & 110.34                                      & 2.55                                          & 1,694.00                                     & 4                 & 5                 & 5                 & 14.4           & Champions                \\
+    2                & 13.31                                       & 1.24                                          & 96.10                                        & 5                 & 4                 & 3                 & 12.5           & Recent / Promising       \\
+    0                & 174.17                                      & 1.00                                          & 1,518.38                                     & 3                 & 2                 & 4                 & 9.3            & High-Value / Cooling Off \\
+    3                & 196.03                                      & 1.03                                          & 48.91                                        & 2                 & 3                 & 2                 & 7.2            & Low-Spend / Occasional   \\
+    1                & 602.92                                      & 0.00                                          & 0.00                                         & 1                 & 1                 & 1                 & 3.1            & Lost / Dormant           \\
+    \hline
+  \end{tabular}
+  \endgroup
+\end{table}
+
+The total is 18,484 customers, which matches the number of rows in the last date of the database.
+
+Champions (cluster 4) has the highest frequency and spend, with an average of 2.55 purchases and 1,694 in total. Its
+average recency is 110 days, so these customers are valuable but have not bought recently.
+
+High-Value / Cooling Off (cluster 0) is the second-largest group by spend, but each customer has bought only once on
+average. Their last purchase was about 174 days ago, so they are at risk of leaving.
+
+Low-Spend / Occasional (cluster 3) is the largest group. Customers buy about once, spend about 49 on average, and last
+bought about 196 days ago.
+
+Recent / Promising (cluster 2) bought most recently, with an average of 13 days since the last purchase. Their spend is
+low so far, which suggests they are new customers who may grow.
+
+Lost / Dormant (cluster 1) has no recorded frequency or spend in the period, and an average recency of 603 days. These
+customers have stopped buying.
+
+\section{Conclusion}
+
+The result of the RFM Analysis and K-Means clustering reveal the distinct customer segments with unique purchasing
+behaviours. By standardizing the RFM variables and applying the K-Means algorithm, the dataset was successfully divided
+into five interpretable clusters. Such segmentation highlights not only the diversity in customer engagement levels but
+also provides valuable insights for strategic business decision-making. Therefore, the CompanyX will be able to design
+and launch effective marketing strategies to each cluster of customers, not only to retain the occasional buyers, but
+also to come up with attractive promotions for recent customers.
+
+\section*{Reference:}
+
+Kuraria, A., Jharbade, N., \& Soni, M. (2018). Centroid Selection Process Using WCSS and Elbow Method for KMean
+Clustering Algorithm in Data Mining. International Journal of Scientific Research in Science, Engineering and
+Technology, 6(1), 190--195. \texttt{https://doi.org/10.32628/ijsrset21841122}
+
