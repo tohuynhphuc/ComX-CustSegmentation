@@ -13,7 +13,7 @@ At a first glance, we can observe that the blueprint follows a Galaxy Schema (Fa
 
 \section{Staging Layer}
 
-The table\'s primary key is the combination of \textbf{BatchID} and \textbf{CustomerKey\_Str}. Conceptually, this relational table acts as a Message Queue, which stores and prepares the demographics data of customers before updating or inserting necessary entries into DimClusterProfiling and DimCustomerProfiling. Moreover, with the help of batching, this table enhances the fault tolerance property of our system. For example, we can monitor the status of a specific batch with ease and rerun it in case that our ETL process encounters problems like crashes and power outage.
+The table's primary key is the combination of \textbf{BatchID} and \textbf{CustomerKey\_Str}. Conceptually, this relational table acts as a Message Queue, which stores and prepares the demographics data of customers before updating or inserting necessary entries into DimClusterProfiling and DimCustomerProfiling. Moreover, with the help of batching, this table enhances the fault tolerance property of our system. For example, we can monitor the status of a specific batch with ease and rerun it in case that our ETL process encounters problems like crashes and power outage.
 
 \section{Dimension Layer \& Slowly Changing Dimension Strategy}
 

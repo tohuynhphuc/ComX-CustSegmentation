@@ -11,8 +11,8 @@
   DTS:LocaleID="8192"
   DTS:ObjectName="Package"
   DTS:PackageType="5"
-  DTS:VersionBuild="144"
-  DTS:VersionGUID="{189AD2DE-1AAA-4BD0-96F9-53D98883C80C}">
+  DTS:VersionBuild="145"
+  DTS:VersionGUID="{B7DE08FB-CCCC-49C8-B89F-69B2F584D8B9}">
   <DTS:Property
     DTS:Name="PackageFormatVersion">8</DTS:Property>
   <DTS:ConnectionManagers>
@@ -1327,14 +1327,14 @@ WHERE d.DateFirstPurchase IS NOT NULL
           <EdgeLayout.Curve>
             <mssgle:Curve
               StartConnector="{assembly:Null}"
-              EndConnector="0,37.0893956094083"
+              EndConnector="0,37.089395609409"
               Start="0,0"
-              End="0,29.5893956094083">
+              End="0,29.589395609409">
               <mssgle:Curve.Segments>
                 <mssgle:SegmentCollection
                   Capacity="5">
                   <mssgle:LineSegment
-                    End="0,29.5893956094083" />
+                    End="0,29.589395609409" />
                 </mssgle:SegmentCollection>
               </mssgle:Curve.Segments>
             </mssgle:Curve>
@@ -1349,14 +1349,14 @@ WHERE d.DateFirstPurchase IS NOT NULL
           <EdgeLayout.Curve>
             <mssgle:Curve
               StartConnector="{assembly:Null}"
-              EndConnector="0,36.6121228507838"
+              EndConnector="0,36.612122850783"
               Start="0,0"
-              End="0,29.1121228507838">
+              End="0,29.112122850783">
               <mssgle:Curve.Segments>
                 <mssgle:SegmentCollection
                   Capacity="5">
                   <mssgle:LineSegment
-                    End="0,29.1121228507838" />
+                    End="0,29.112122850783" />
                 </mssgle:SegmentCollection>
               </mssgle:Curve.Segments>
             </mssgle:Curve>
