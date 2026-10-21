@@ -23,7 +23,8 @@
 \usepackage{tabulary}
 \usepackage[unicode]{hyperref}
 
-\addbibresource{sample.bib}
+% UPDATED: Changed from sample.bib to references.bib
+\addbibresource{references.bib}
 \graphicspath{{sections/images/}{images/}}
 
 \renewcommand{\familydefault}{\rmdefault}
@@ -188,4 +189,9 @@
 \input{sections/section4.tex}
 \input{sections/section5.tex}
 \input{sections/section6.tex}
+
+\newpage
+% UPDATED: Command to output the bibliography
+\printbibliography
+
 \end{document}
