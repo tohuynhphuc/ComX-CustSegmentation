@@ -139,4 +139,4 @@ Desktop.ini
 .env.*
 !.env.example
 
-main.pdf
+main.pdfout/
